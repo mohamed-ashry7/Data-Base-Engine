@@ -10,19 +10,17 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 public class DBApp {
+	String currentDir = System.getProperty("user.dir");
 
 	public void createTable(String strTableName, String strClusteringKeyColumn,
 			Hashtable<String, String> htblColNameType) throws DBAppException {
-
 		String tableName = strTableName;
-		new File("C:\\Users\\Mohamed Elashry\\Software\\java-neon\\workspace\\DBProject\\" + tableName).mkdirs();
+		new File(currentDir + "\\" + tableName).mkdirs();
 
 		Set keySet = htblColNameType.keySet();
 
-		File metaData = new File("C:\\Users\\Mohamed Elashry\\Software\\java-neon\\workspace\\DBProject\\" + tableName
-				+ "\\metadata.csv");
-		File DATA = new File(
-				"C:\\Users\\Mohamed Elashry\\Software\\java-neon\\workspace\\DBProject\\" + tableName + "\\DATA.txt");
+		File metaData = new File(currentDir + "\\" + tableName + "\\metadata.csv");
+		File DATA = new File(currentDir + "\\" + tableName + "\\DATA.txt");
 		try {
 			PrintWriter dataWriter = new PrintWriter(DATA.getPath());
 			dataWriter.println("Page: " + 0);
@@ -53,8 +51,7 @@ public class DBApp {
 
 	private boolean createOrNot(String strTableName) {
 		try {
-			File tableFile = new File("C:\\Users\\Mohamed Elashry\\Software\\java-neon\\workspace\\DBProject\\"
-					+ strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			br.readLine();
 			int records = Integer.parseInt(br.readLine());
@@ -66,8 +63,7 @@ public class DBApp {
 
 	private int lastPage(String strTableName) {
 		try {
-			File tableFile = new File("C:\\Users\\Mohamed Elashry\\Software\\java-neon\\workspace\\DBProject\\"
-					+ strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			StringTokenizer str = new StringTokenizer(br.readLine());
 			str.nextToken();
@@ -92,8 +88,7 @@ public class DBApp {
 
 	private String clusteringColumn(String strTableName) {
 		try {
-			File tableFile = new File("C:\\Users\\Mohamed Elashry\\Software\\java-neon\\workspace\\DBProject\\"
-					+ strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			br.readLine();
 			br.readLine();
@@ -109,9 +104,7 @@ public class DBApp {
 
 	private void increaseNoPages(String strTableName) {
 		try {
-			File tableFile = 
-					new File("C:\\Users\\Mohamed Elashry\\Software\\java-neon\\workspace\\DBProject\\"
-					+ strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			String line1 = br.readLine();
 			String line2 = br.readLine();
