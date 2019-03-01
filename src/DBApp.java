@@ -1,8 +1,12 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -109,8 +113,7 @@ public class DBApp {
 
 	private void increaseNoPages(String strTableName) {
 		try {
-			File tableFile = 
-					new File("C:\\Users\\Mohamed Elashry\\Software\\java-neon\\workspace\\DBProject\\"
+			File tableFile = new File("C:\\Users\\Mohamed Elashry\\Software\\java-neon\\workspace\\DBProject\\"
 					+ strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			String line1 = br.readLine();
@@ -131,21 +134,63 @@ public class DBApp {
 		}
 	}
 
+	private void serializingAnObject(Object newObject, String pathName) {
+		try {
+			FileOutputStream fileOut = new FileOutputStream(pathName);
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			out.writeObject(newObject);
+			out.close();
+			fileOut.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private Page deserializingAnObject(String Path) {
+		Page p = null;
+		try {
+			FileInputStream fileIn = new FileInputStream(Path);
+			ObjectInputStream in = new ObjectInputStream(fileIn);
+			p = (Page) in.readObject();
+			in.close();
+			fileIn.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException cc) {
+			cc.printStackTrace();
+		}
+		return p;
+	}
+
+	private Page whichPageToInsert( Hashtable<String , Object > record , String clustered ,String Path , int lastPage ) {
+		
+		Object value  = record.get(clustered ) ; 
+		String  cls = value.getClass().getName() ; 
+		
+		for (int i = 1 ; i <= lastPage ; i ++ ) { 
+			String path  = Path+ "\\" + "Page"+i+".ser" ; 
+			Page deserializedPage = deserializingAnObject(path) ; 
+			Hashtable<String , Object > lastRecord = deserializedPage.getLastElement() ;
+			
+		}
+		
+		
+		return null;
+	}
+
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
 
 		Hashtable<String, Object> value = mapHash(htblColNameValue);
 		int lastPage = lastPage(strTableName);
 		String clusteringTable = clusteringColumn(strTableName);
-		Page currentPage =null ; 
+		Page currentPage = null;
 		if (lastPage == 0 || createOrNot(strTableName)) {
-			lastPage++ ; 
-			currentPage = new Page(strTableName , lastPage);
+			lastPage++;
+			Page e = new Page(strTableName, lastPage);
 			increaseNoPages(strTableName);
+			serializingAnObject(e, "C:\\Users\\Mohamed Elashry\\Software\\java-neon\\workspace\\DBProject\\"
+					+ strTableName + "\\" + e.getPageName() + ".ser");
 		}
-		else {
-			// DESERIAZABLEEEEE 
-		}
-		
 
 	}
 
