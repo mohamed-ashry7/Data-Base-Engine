@@ -1,9 +1,14 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Set;
@@ -14,13 +19,15 @@ public class DBApp {
 
 	public void createTable(String strTableName, String strClusteringKeyColumn,
 			Hashtable<String, String> htblColNameType) throws DBAppException {
+
 		String tableName = strTableName;
 		new File(currentDir + "\\" + tableName).mkdirs();
 
 		Set keySet = htblColNameType.keySet();
 
 		File metaData = new File(currentDir + "\\" + tableName + "\\metadata.csv");
-		File DATA = new File(currentDir + "\\" + tableName + "\\DATA.txt");
+		File DATA = new File(
+				currentDir+"\\" + tableName + "\\DATA.txt");
 		try {
 			PrintWriter dataWriter = new PrintWriter(DATA.getPath());
 			dataWriter.println("Page: " + 0);
@@ -51,7 +58,8 @@ public class DBApp {
 
 	private boolean createOrNot(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir+"\\" 
+					+ strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			br.readLine();
 			int records = Integer.parseInt(br.readLine());
@@ -63,7 +71,8 @@ public class DBApp {
 
 	private int lastPage(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir+"\\" 
+					+ strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			StringTokenizer str = new StringTokenizer(br.readLine());
 			str.nextToken();
@@ -88,7 +97,8 @@ public class DBApp {
 
 	private String clusteringColumn(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir+"\\" 
+					+ strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			br.readLine();
 			br.readLine();
@@ -104,7 +114,8 @@ public class DBApp {
 
 	private void increaseNoPages(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir+"\\" 
+					+ strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			String line1 = br.readLine();
 			String line2 = br.readLine();
@@ -124,21 +135,136 @@ public class DBApp {
 		}
 	}
 
+	private void serializingAnObject(Object newObject, String pathName) {
+		try {
+			FileOutputStream fileOut = new FileOutputStream(pathName);
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			out.writeObject(newObject);
+			out.close();
+			fileOut.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private Page deserializingAnObject(String Path) {
+		Page p = null;
+		try {
+			FileInputStream fileIn = new FileInputStream(Path);
+			ObjectInputStream in = new ObjectInputStream(fileIn);
+			p = (Page) in.readObject();
+			in.close();
+			fileIn.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException cc) {
+			cc.printStackTrace();
+		}
+		return p;
+	}
+
+	private boolean comparingValues(Object value, Object lastValue, String operation) {
+
+		String cls = value.getClass().getName();
+
+		switch (cls) {
+		case "java.lang.Integer":
+			if (((Integer) value).compareTo((Integer) lastValue) < 0 && operation.equals("LESS")
+					|| ((Integer) value).compareTo((Integer) lastValue) == 0 && operation.equals("EQUAL")) {
+				return true;
+			} else {
+				return false;
+			}
+
+		case "java.lang.Double":
+			if (((Double) value).compareTo((Double) lastValue) < 0 && operation.equals("LESS")
+					|| ((Double) value).compareTo((Double) lastValue) == 0 && operation.equals("EQUAL")) {
+				return true;
+			} else {
+				return false;
+			}
+
+		case "java.lang.String":
+			if (((String) value).compareTo((String) lastValue) < 0 && operation.equals("LESS")
+					|| ((String) value).compareTo((String) lastValue) == 0 && operation.equals("EQUAL")) {
+				return true;
+			} else {
+				return false;
+			}
+
+		case "java.lang.Boolean":
+			if (((Boolean) value).compareTo((Boolean) lastValue) < 0 && operation.equals("LESS")
+					|| ((Boolean) value).compareTo((Boolean) lastValue) == 0 && operation.equals("EQUAL")) {
+				return true;
+			} else {
+				return false;
+			}
+
+		case "java.util.Date":
+			if (((Date) value).compareTo((Date) lastValue) < 0 && operation.equals("LESS")
+					|| ((Date) value).compareTo((Date) lastValue) == 0 && operation.equals("EQUAL")) {
+				return true;
+			} else {
+				return false;
+			}
+
+		}
+		return false;
+	}
+
+	private Page whichPage(Hashtable<String, Object> record, String clustered, String Path, int lastPage) {
+
+		Object value = record.get(clustered);
+
+		for (int i = 1; i <= lastPage; i++) {
+			String path = Path + "\\" + "Page" + i + ".ser";
+			Page deserializedPage = deserializingAnObject(path);
+			Hashtable<String, Object> lastRecord = deserializedPage.getLastElement();
+			Object lastValue = lastRecord.get(clustered);
+			boolean flag = comparingValues(value, lastValue, "LESS");
+			if (flag) {
+				return deserializedPage;
+			}
+
+		}
+
+		return null;
+	}
+
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
 
 		Hashtable<String, Object> value = mapHash(htblColNameValue);
+		value.put("Date", new Date());
 		int lastPage = lastPage(strTableName);
-		String clusteringTable = clusteringColumn(strTableName);
-		Page currentPage =null ; 
+		String clusteringColumn = clusteringColumn(strTableName);
+		String clusteringColumnType = htblColNameValue.get(clusteringColumn).getClass().getName();
+		Page currentPage = null;
 		if (lastPage == 0 || createOrNot(strTableName)) {
-			lastPage++ ; 
-			currentPage = new Page(strTableName , lastPage);
+			lastPage++;
+			Page e = new Page(strTableName, lastPage);
+			e.setClustering(clusteringColumn, clusteringColumnType);
 			increaseNoPages(strTableName);
+			serializingAnObject(e, currentDir+"\\" 
+					+ strTableName + "\\" + e.getPageName() + ".ser");
 		}
-		else {
-			// DESERIAZABLEEEEE 
+		Hashtable<String, Object> lastValue = null;
+		while (true) {
+			Page toAddIn = whichPage(value, clusteringColumn,
+					currentDir+"\\"  + strTableName, lastPage);
+			if (toAddIn.isFull()) {
+				lastValue = toAddIn.removeLastElement();
+				toAddIn.addElement(value);
+				serializingAnObject(toAddIn, currentDir+"\\" 
+						+ strTableName + "\\" + toAddIn.getPageName() + ".ser");
+				value = lastValue;
+			} else {
+				toAddIn.addElement(value);
+				serializingAnObject(toAddIn, currentDir+"\\" 
+						+ strTableName + "\\" + toAddIn.getPageName() + ".ser");
+				break;
+			}
+
 		}
-		
 
 	}
 
