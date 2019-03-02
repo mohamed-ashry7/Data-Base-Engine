@@ -24,7 +24,10 @@ public class DBApp {
 		new File(currentDir + "\\" + tableName).mkdirs();
 
 		Set keySet = htblColNameType.keySet();
-
+		
+		Set TypeSet = new HashSet(htblColNameType.values());
+		validateTypes(TypeSet);
+		
 		File metaData = new File(currentDir + "\\" + tableName + "\\metadata.csv");
 		File DATA = new File(currentDir + "\\" + tableName + "\\DATA.txt");
 		try {
@@ -56,6 +59,21 @@ public class DBApp {
 		}
 
 	}
+	
+	private void validateTypes(Set<Object> createdTypes) throws DBAppException {
+		String validTypes[] = { "java.lang.integer", "java.lang.double", "java.lang.string", "java.lang.boolean", "java.util.date" };
+		Set <String> validTypes2 = Set.of(validTypes);
+		System.out.println(createdTypes);
+		Iterator<Object> it = createdTypes.iterator();
+		while (it.hasNext()) {
+			String type = (String)it.next();
+			String type2 = type.toLowerCase().trim();
+			if(!validTypes2.contains(type2)){
+				throw new DBAppException("the types you entered are not valid");
+			}
+		}
+	}
+
 
 	private boolean createOrNot(String strTableName) {
 		try {
