@@ -61,7 +61,7 @@ public class DBApp {
 	}
 	
 	private void validateTypes(Set<Object> createdTypes) throws DBAppException {
-		String validTypes[] = { "java.lang.integer", "java.lang.double", "java.lang.string", "java.lang.boolean", "java.util.date" };
+		String validTypes[] = { "java.lang.Integer", "java.lang.Double", "java.lang.String", "java.lang.Boolean", "java.util.Date" };
 		Set <String> validTypes2 = Set.of(validTypes);
 		System.out.println(createdTypes);
 		Iterator<Object> it = createdTypes.iterator();
