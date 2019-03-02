@@ -77,7 +77,7 @@ public class DBApp {
 
 	private boolean createOrNot(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA.txt");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			br.readLine();
 			int records = Integer.parseInt(br.readLine());
@@ -89,7 +89,7 @@ public class DBApp {
 
 	private int lastPage(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA.txt");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			StringTokenizer str = new StringTokenizer(br.readLine());
 			str.nextToken();
@@ -114,7 +114,7 @@ public class DBApp {
 
 	private String clusteringColumn(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA.txt");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			br.readLine();
 			br.readLine();
@@ -130,7 +130,7 @@ public class DBApp {
 
 	private void increaseNoPages(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA.txt");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			String line1 = br.readLine();
 			String line2 = br.readLine();
