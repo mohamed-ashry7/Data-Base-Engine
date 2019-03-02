@@ -255,7 +255,7 @@ public class DBApp {
 
 		}
 
-		return null;
+		return null;	// this line will be reached when we add the largest clustering key value, we should return the last page
 	}
 ///////////////////////////////// INSERT //////////////////////////////////////////////////
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
@@ -280,7 +280,7 @@ public class DBApp {
 				lastValue = toAddIn.removeLastElement();
 				toAddIn.addElement(value);
 				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
-				value = lastValue;
+				value = lastValue;  //What now? should we call insertIntoTable(value) again ?
 			} else {
 				toAddIn.addElement(value);
 				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
