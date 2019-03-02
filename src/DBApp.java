@@ -24,7 +24,10 @@ public class DBApp {
 		new File(currentDir + "\\" + tableName).mkdirs();
 
 		Set keySet = htblColNameType.keySet();
-
+		
+		Set TypeSet = new HashSet(htblColNameType.values());
+		validateTypes(TypeSet);
+		
 		File metaData = new File(currentDir + "\\" + tableName + "\\metadata.csv");
 		File DATA = new File(currentDir + "\\" + tableName + "\\DATA.txt");
 		try {
@@ -56,14 +59,38 @@ public class DBApp {
 		}
 
 	}
+	
+	private void validateTypes(Set<Object> createdTypes) throws DBAppException {
+		String validTypes[] = { "java.lang.Integer", "java.lang.Double", "java.lang.String", "java.lang.Boolean", "java.util.Date" };
+		Set <String> validTypes2 = Set.of(validTypes);
+		System.out.println(createdTypes);
+		Iterator<Object> it = createdTypes.iterator();
+		while (it.hasNext()) {
+			String type = (String)it.next();
+			String type2 = type.toLowerCase().trim();
+			if(!validTypes2.contains(type2)){
+				throw new DBAppException("the types you entered are not valid");
+			}
+		}
+	}
+
 
 	private boolean createOrNot(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA.txt");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			br.readLine();
-			int records = Integer.parseInt(br.readLine());
-			return records % 200 == 0;
+//			int records = Integer.parseInt(br.readLine());	// this is equal to parseInt("Rows: 0") ,we need to parse out the first 5 chars OR use tokenizer like in lastPage method
+			StringTokenizer str = new StringTokenizer(br.readLine());
+			str.nextToken();
+			int records = Integer.parseInt(str.nextToken());
+
+//			return records % 200 == 0;	// records from 1 to 200 will return true, hence creating a page every time we insert a record
+			return (records % 200 == 0) ;
+		} catch (IOException e) {
+			return false;
+		}
+
 		} catch (IOException e) {
 			return false;
 		}
@@ -71,7 +98,7 @@ public class DBApp {
 
 	private int lastPage(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA.txt");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			StringTokenizer str = new StringTokenizer(br.readLine());
 			str.nextToken();
@@ -96,7 +123,7 @@ public class DBApp {
 
 	private String clusteringColumn(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA.txt");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			br.readLine();
 			br.readLine();
@@ -112,7 +139,7 @@ public class DBApp {
 
 	private void increaseNoPages(String strTableName) {
 		try {
-			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA.txt");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			String line1 = br.readLine();
 			String line2 = br.readLine();
@@ -228,7 +255,7 @@ public class DBApp {
 
 		}
 
-		return null;
+		return null;	// this line will be reached when we add the largest clustering key value, we should return the last page
 	}
 ///////////////////////////////// INSERT //////////////////////////////////////////////////
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
@@ -253,7 +280,7 @@ public class DBApp {
 				lastValue = toAddIn.removeLastElement();
 				toAddIn.addElement(value);
 				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
-				value = lastValue;
+				value = lastValue;  //What now? should we call insertIntoTable(value) again ?
 			} else {
 				toAddIn.addElement(value);
 				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
