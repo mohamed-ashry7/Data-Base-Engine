@@ -86,7 +86,7 @@ public class DBApp {
 			int records = Integer.parseInt(str.nextToken());
 
 //			return records % 200 == 0;	// records from 1 to 200 will return true, hence creating a page every time we insert a record
-			return (records % 200 == 0) && records > 200;
+			return (records % 200 == 0) ;
 		} catch (IOException e) {
 			return false;
 		}
