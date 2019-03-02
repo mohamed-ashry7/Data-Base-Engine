@@ -59,7 +59,7 @@ public class Page implements java.io.Serializable {
 	
 	
 	
-	public void removeRecord(Hashtable<String , Object > h ){
+	public int  removeRecord(Hashtable<String , Object > h ){
 		
 		Set keys =h.keySet() ; 
 		Iterator<String> it = keys.iterator();
@@ -67,6 +67,7 @@ public class Page implements java.io.Serializable {
 		while (it.hasNext()) { 
 			key.add(it.next()) ; 
 		}
+		int numberOfRemovedRecords = 0 ; 
 		for (int i = 0 ; i < storage.size() ; i ++) { 
 			
 			Hashtable<String , Object > r = storage.get(i) ; 
@@ -93,11 +94,13 @@ public class Page implements java.io.Serializable {
 				}
 				
 			}
-			if (counter == h.size())
+			if (counter == h.size()){
 				storage.remove(r) ; 
+				numberOfRemovedRecords++ ; 
+				} 
 		}
 		
-		
+		return numberOfRemovedRecords ; 
 	}
 	
 	
