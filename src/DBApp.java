@@ -16,7 +16,7 @@ import java.util.StringTokenizer;
 
 public class DBApp {
 	String currentDir = System.getProperty("user.dir");
-
+////////////////////////////////////////// CREATE ////////////////////////////////////////////////
 	public void createTable(String strTableName, String strClusteringKeyColumn,
 			Hashtable<String, String> htblColNameType) throws DBAppException {
 
@@ -26,13 +26,14 @@ public class DBApp {
 		Set keySet = htblColNameType.keySet();
 
 		File metaData = new File(currentDir + "\\" + tableName + "\\metadata.csv");
-		File DATA = new File(
-				currentDir+"\\" + tableName + "\\DATA.txt");
+		File DATA = new File(currentDir + "\\" + tableName + "\\DATA.txt");
 		try {
 			PrintWriter dataWriter = new PrintWriter(DATA.getPath());
 			dataWriter.println("Page: " + 0);
 			dataWriter.println("Rows: " + 0);
 			dataWriter.println("ClusteringTable: " + strClusteringKeyColumn);
+			dataWriter.flush();
+			dataWriter.close();
 			PrintWriter writer = new PrintWriter(metaData.getPath());
 			String firstLine = "Table Name , Column Name , Column Type , Key , Indexed";
 			writer.println(firstLine);
@@ -58,8 +59,7 @@ public class DBApp {
 
 	private boolean createOrNot(String strTableName) {
 		try {
-			File tableFile = new File(currentDir+"\\" 
-					+ strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			br.readLine();
 			int records = Integer.parseInt(br.readLine());
@@ -71,8 +71,7 @@ public class DBApp {
 
 	private int lastPage(String strTableName) {
 		try {
-			File tableFile = new File(currentDir+"\\" 
-					+ strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			StringTokenizer str = new StringTokenizer(br.readLine());
 			str.nextToken();
@@ -97,8 +96,7 @@ public class DBApp {
 
 	private String clusteringColumn(String strTableName) {
 		try {
-			File tableFile = new File(currentDir+"\\" 
-					+ strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			br.readLine();
 			br.readLine();
@@ -114,8 +112,7 @@ public class DBApp {
 
 	private void increaseNoPages(String strTableName) {
 		try {
-			File tableFile = new File(currentDir+"\\" 
-					+ strTableName + "\\DATA");
+			File tableFile = new File(currentDir + "\\" + strTableName + "\\DATA");
 			BufferedReader br = new BufferedReader(new FileReader(tableFile));
 			String line1 = br.readLine();
 			String line2 = br.readLine();
@@ -217,20 +214,23 @@ public class DBApp {
 		Object value = record.get(clustered);
 
 		for (int i = 1; i <= lastPage; i++) {
+
 			String path = Path + "\\" + "Page" + i + ".ser";
 			Page deserializedPage = deserializingAnObject(path);
-			Hashtable<String, Object> lastRecord = deserializedPage.getLastElement();
-			Object lastValue = lastRecord.get(clustered);
-			boolean flag = comparingValues(value, lastValue, "LESS");
-			if (flag) {
-				return deserializedPage;
+			if (deserializedPage != null) {
+				Hashtable<String, Object> lastRecord = deserializedPage.getLastElement();
+				Object lastValue = lastRecord.get(clustered);
+				boolean flag = comparingValues(value, lastValue, "LESS");
+				if (flag) {
+					return deserializedPage;
+				}
 			}
 
 		}
 
 		return null;
 	}
-
+///////////////////////////////// INSERT //////////////////////////////////////////////////
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
 
 		Hashtable<String, Object> value = mapHash(htblColNameValue);
@@ -244,26 +244,51 @@ public class DBApp {
 			Page e = new Page(strTableName, lastPage);
 			e.setClustering(clusteringColumn, clusteringColumnType);
 			increaseNoPages(strTableName);
-			serializingAnObject(e, currentDir+"\\" 
-					+ strTableName + "\\" + e.getPageName() + ".ser");
+			serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
 		}
 		Hashtable<String, Object> lastValue = null;
 		while (true) {
-			Page toAddIn = whichPage(value, clusteringColumn,
-					currentDir+"\\"  + strTableName, lastPage);
+			Page toAddIn = whichPage(value, clusteringColumn, currentDir + "\\" + strTableName, lastPage);
 			if (toAddIn.isFull()) {
 				lastValue = toAddIn.removeLastElement();
 				toAddIn.addElement(value);
-				serializingAnObject(toAddIn, currentDir+"\\" 
-						+ strTableName + "\\" + toAddIn.getPageName() + ".ser");
+				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
 				value = lastValue;
 			} else {
 				toAddIn.addElement(value);
-				serializingAnObject(toAddIn, currentDir+"\\" 
-						+ strTableName + "\\" + toAddIn.getPageName() + ".ser");
+				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
 				break;
 			}
 
+		}
+
+	}
+///////////////////////////// UPDATE ///////////////////////////////////////////////
+	public void updateTable(String strTableName, String strKey, Hashtable<String, Object> htblColNameValue)
+			throws DBAppException {
+		
+		
+		
+
+	}
+//////////////////////////////////////DELETE//////////////////////////////////////////////////////////////////
+	public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
+		int lastPage = lastPage(strTableName);
+		String clusteringColumn = clusteringColumn(strTableName);
+		Hashtable<String, Object> value = mapHash(htblColNameValue);
+
+		for (int i = 1; i <= lastPage; i++) {
+			Page e = deserializingAnObject(currentDir + "\\" + strTableName + "\\" + "Page" + i + ".ser");
+			if (e != null) {
+				e.removeRecord(value);
+				if (e.isEmpty()) {
+					File f = new File(currentDir + "\\" + strTableName + "\\" + "Page" + i + ".ser");
+					f.delete();
+				} else {
+					serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
+
+				}
+			}
 		}
 
 	}
