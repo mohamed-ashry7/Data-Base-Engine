@@ -1,12 +1,11 @@
 
 public class DBAppException extends Exception{
-    String str1;
     
-	DBAppException(String str2) {
-		str1=str2;
+	 public DBAppException(String message) {
+		super(message) ; 
 	}
 	
 	public String toString(){ 
-		return ("DBAppException Occurred: "+str1) ;
+		return ("DBAppException Occurred: "+ super.getMessage()) ;
 	}
 }

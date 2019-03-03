@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
@@ -30,7 +31,7 @@ public class DBApp {
 		Set keySet = htblColNameType.keySet();
 
 		Set TypeSet = new HashSet(htblColNameType.values());
-		validateTypes(TypeSet);
+		validateEnteredTypes(TypeSet);
 		// changed the file OF DATA to be arraylist saved in .ser file to make
 		// sure no one can edit it
 		File metaData = new File(currentDir + "\\" + tableName + "\\metadata.csv");
@@ -38,7 +39,7 @@ public class DBApp {
 		ArrayList<Integer> PAGES = new ArrayList<>();
 
 		try {
-			DATA.add("PAGES:" + 0 ) ; 
+			DATA.add("PAGES:" + 0);
 			DATA.add("Rows: " + 0);
 			DATA.add("ClusteringTable: " + strClusteringKeyColumn);
 			serializingAnObject(DATA, currentDir + "\\" + tableName + "\\DATA.ser");
@@ -67,7 +68,55 @@ public class DBApp {
 
 	}
 
-	private void validateTypes(Set<String> createdTypes) throws DBAppException {
+	private void validateTypesOfValues(Hashtable<String, Object> h, String strTableName) throws DBAppException {
+
+		File tableName = new File(currentDir + "\\" + strTableName);
+		if (tableName == null) {
+			throw new DBAppException("THIS TABLE DOES NOT EXIST ");
+		}
+
+		Set key = h.keySet();
+		Iterator<String> it = key.iterator();
+		ArrayList<String> newArr = new ArrayList<>();
+		while (it.hasNext()) {
+			newArr.add(it.next());
+		}
+		File f = new File(currentDir + "\\" + strTableName + "\\metadata.csv");
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(f));
+			br.readLine();
+
+			String x = null;
+
+			while ((x = br.readLine()) != null) {
+				String[] strArray = x.split(",");
+
+				for (int j = 0; j < newArr.size(); j++) {
+					if (newArr.get(j).equals(strArray[1])) {
+						newArr.remove(j);
+						if (!h.get(newArr.get(j)).getClass().getName().equals(strArray[2])) {
+							throw new DBAppException("THE TYPES ARE NOT CONSISTENT");
+						} else {
+							break;
+						}
+					}
+				}
+
+			}
+			if (newArr.size() != 0) {
+				throw new DBAppException("THERE IS INVALID FIELD NAME ");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		// catch (IOException e ) {
+		//
+		// }
+	}
+
+	private void validateEnteredTypes(Set<String> createdTypes) throws DBAppException {
 		ArrayList<String> validTypes = new ArrayList<>();
 		validTypes.add("java.lang.Integer");
 		validTypes.add("java.lang.Double");
@@ -82,24 +131,6 @@ public class DBApp {
 				throw new DBAppException("the types you entered are not valid");
 			}
 		}
-	}
-
-	private boolean createOrNot(String strTableName) {
-
-		ArrayList<String> DATA = (ArrayList<String>) deserializingAnObject(
-				currentDir + "\\" + strTableName + "\\DATA.ser");
-		String ROWS = DATA.get(1);
-		StringTokenizer str = new StringTokenizer(ROWS);
-		str.nextToken();
-		// int records = Integer.parseInt(br.readLine()); // this is equal to
-		// parseInt("Rows: 0") ,we need to parse out the first 5 chars OR use
-		// tokenizer like in lastPage method
-		int records = Integer.parseInt(str.nextToken());
-
-		// return records % 200 == 0; // records from 1 to 200 will return true,
-		// hence creating a page every time we insert a record
-		return (records % 200 == 0);
-
 	}
 
 	private int numberOfCreatedPages(String strTableName) {
@@ -140,19 +171,18 @@ public class DBApp {
 				currentDir + "\\" + strTableName + "\\PAGES.ser");
 		ArrayList<String> DATA = (ArrayList<String>) deserializingAnObject(
 				currentDir + "\\" + strTableName + "\\DATA.ser");
-		StringTokenizer str = new StringTokenizer(DATA.get(0)) ; 
-		str.nextToken() ; 
-		int pages = Integer.parseInt(str.nextToken()) ; 
-		int  numberOFPages = PAGES.size();
-		
-		if (sign.equals("+")){
-			PAGES.add(new Integer(modifiedPage)) ; 
-			pages++ ; 
+		StringTokenizer str = new StringTokenizer(DATA.get(0));
+		str.nextToken();
+		int pages = Integer.parseInt(str.nextToken());
+		int numberOFPages = PAGES.size();
+
+		if (sign.equals("+")) {
+			PAGES.add(new Integer(modifiedPage));
+			pages++;
 			serializingAnObject(DATA, currentDir + "\\" + strTableName + "\\DATA.ser");
 
-		}
-		else { 
-			PAGES.remove(new Integer(modifiedPage)) ; 
+		} else {
+			PAGES.remove(new Integer(modifiedPage));
 		}
 		serializingAnObject(PAGES, currentDir + "\\" + strTableName + "\\PAGES.ser");
 
@@ -253,12 +283,11 @@ public class DBApp {
 	}
 
 	private Page whichPage(Hashtable<String, Object> record, String clustered, String Path) {
-		Page lastPage = null ; 
-		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
-				Path + "\\PAGES.ser");
+		Page lastPage = null;
+		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(Path + "\\PAGES.ser");
 		Object value = record.get(clustered);
 
-		for (int i = 0; i <PAGES.size(); i++) {
+		for (int i = 0; i < PAGES.size(); i++) {
 
 			String path = Path + "\\" + "Page" + PAGES.get(i).intValue() + ".ser";
 			Page deserializedPage = (Page) deserializingAnObject(path);
@@ -279,33 +308,53 @@ public class DBApp {
 							// page
 	}
 
+	private Page lastPage(String Path) {
+		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(Path + "\\PAGES.ser");
+
+		Page p = (Page) deserializingAnObject(Path + "\\Page" + PAGES.get(PAGES.size() - 1).intValue() + ".ser");
+		return p;
+	}
+
+	private Page createPage(String strTableName, Hashtable<String, Object> htblColNameValue) {
+		int numberOfCreatedPages = numberOfCreatedPages(strTableName);
+		String clusteringColumn = clusteringColumn(strTableName);
+		String clusteringColumnType = htblColNameValue.get(clusteringColumn).getClass().getName();
+		numberOfCreatedPages++;
+		Page e = new Page(strTableName, numberOfCreatedPages);
+		e.setClustering(clusteringColumn, clusteringColumnType);
+		changeNoPages(strTableName, "+", numberOfCreatedPages);
+		serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
+		return e;
+	}
+
 	///////////////////////////////// INSERT
-	///////////////////////////////// //////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
 
 		Hashtable<String, Object> value = mapHash(htblColNameValue);
-		value.put("Date", new Date());
+		validateTypesOfValues(htblColNameValue, strTableName);
+		value.put("TouchDate", new Date());
 		int numberOfCreatedPages = numberOfCreatedPages(strTableName);
-		changeNoRows(strTableName, "+", 1);
 		String clusteringColumn = clusteringColumn(strTableName);
-		String clusteringColumnType = htblColNameValue.get(clusteringColumn).getClass().getName();
-		Page currentPage = null;
-		if (numberOfCreatedPages == 0 || createOrNot(strTableName)) {
-			numberOfCreatedPages ++ ; 
-			Page e = new Page(strTableName, numberOfCreatedPages);
-			e.setClustering(clusteringColumn, clusteringColumnType);
-			changeNoPages(strTableName, "+",numberOfCreatedPages);
-			serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
+		changeNoRows(strTableName, "+", 1);
+		if (numberOfCreatedPages == 0) {
+			createPage(strTableName, htblColNameValue);
 		}
 		Hashtable<String, Object> lastValue = null;
+		Page lastPage = lastPage(currentDir + "\\" + strTableName);
 		while (true) {
 			Page toAddIn = whichPage(value, clusteringColumn, currentDir + "\\" + strTableName);
-			if (toAddIn.isFull()) {
+			if (toAddIn.isFull() && toAddIn.equals(lastPage)) {
+				Page e = createPage(strTableName, htblColNameValue);
+				lastValue = lastPage.removeLastElement();
+				lastPage.addElement(value);
+				e.addElement(lastValue);
+				break;
+			} else if (toAddIn.isFull()) {
 				lastValue = toAddIn.removeLastElement();
 				toAddIn.addElement(value);
 				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
-				value = lastValue; // What now? should we call
-									// insertIntoTable(value) again ?
+				value = lastValue;
 			} else {
 				toAddIn.addElement(value);
 				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
@@ -317,27 +366,45 @@ public class DBApp {
 	}
 
 	///////////////////////////// UPDATE
-	///////////////////////////// ///////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////
 	public void updateTable(String strTableName, String strKey, Hashtable<String, Object> htblColNameValue)
 			throws DBAppException {
+		validateTypesOfValues(htblColNameValue, strTableName);
+
+		String clusteringValue = strKey;
+		Hashtable<String, Object> value = mapHash(htblColNameValue);
+		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
+				currentDir + "\\" + strTableName + "\\PAGES.ser");
+		for (int i = 0; i < PAGES.size(); i++) {
+			Page e = (Page) deserializingAnObject(
+					currentDir + "\\" + strTableName + "\\" + "Page" + PAGES.get(i).intValue() + ".ser");
+			if (e != null) {
+				e.updateRecord(clusteringValue, htblColNameValue);
+				serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
+
+			}
+		}
 
 	}
 
 	////////////////////////////////////// DELETE//////////////////////////////////////////////////////////////////
 	public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
+		validateTypesOfValues(htblColNameValue, strTableName);
+
 		String clusteringColumn = clusteringColumn(strTableName);
 		Hashtable<String, Object> value = mapHash(htblColNameValue);
 		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
 				currentDir + "\\" + strTableName + "\\PAGES.ser");
-		for (int i = 0;i < PAGES.size(); i++) {
-			Page e = (Page) deserializingAnObject(currentDir + "\\" + strTableName + "\\" + "Page" + PAGES.get(i).intValue() + ".ser");
+		for (int i = 0; i < PAGES.size(); i++) {
+			Page e = (Page) deserializingAnObject(
+					currentDir + "\\" + strTableName + "\\" + "Page" + PAGES.get(i).intValue() + ".ser");
 			if (e != null) {
 				int numberOfDeletions = e.removeRecord(value);
 				changeNoRows(strTableName, "-", numberOfDeletions);
 				if (e.isEmpty()) {
 					File f = new File(currentDir + "\\" + strTableName + "\\" + "Page" + i + ".ser");
-					f.delete(); // update the number of pages and number of
-					changeNoPages(strTableName, "-" , PAGES.get(i).intValue()); // records
+					f.delete();
+					changeNoPages(strTableName, "-", PAGES.get(i).intValue());
 				} else {
 					serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
 				}
