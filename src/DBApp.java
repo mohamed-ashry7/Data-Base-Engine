@@ -39,7 +39,7 @@ public class DBApp {
 		ArrayList<Integer> PAGES = new ArrayList<>();
 
 		try {
-			DATA.add("PAGES:" + 0);
+			DATA.add("PAGES: " + 0);
 			DATA.add("Rows: " + 0);
 			DATA.add("ClusteringTable: " + strClusteringKeyColumn);
 			serializingAnObject(DATA, currentDir + "\\" + tableName + "\\DATA.ser");
@@ -94,10 +94,12 @@ public class DBApp {
 
 				for (int j = 0; j < newArr.size(); j++) {
 					if (newArr.get(j).equals(strArray[1])) {
-						newArr.remove(j);
 						if (!h.get(newArr.get(j)).getClass().getName().equals(strArray[2])) {
+							newArr.remove(j);
+
 							throw new DBAppException("THE TYPES ARE NOT CONSISTENT");
 						} else {
+							newArr.remove(j);
 							break;
 						}
 					}
@@ -137,10 +139,11 @@ public class DBApp {
 
 		ArrayList<String> DATA = (ArrayList<String>) deserializingAnObject(
 				currentDir + "\\" + strTableName + "\\DATA.ser");
-		String PAGES = DATA.get(0);
+		String PAGES =(String) DATA.get(0);
 		StringTokenizer str = new StringTokenizer(PAGES);
 		str.nextToken();
 		int pages = Integer.parseInt(str.nextToken());
+		System.out.println();
 		return pages;
 
 	}
@@ -161,7 +164,9 @@ public class DBApp {
 				currentDir + "\\" + strTableName + "\\DATA.ser");
 		String theColumn = DATA.get(2);
 		StringTokenizer str = new StringTokenizer(theColumn);
+		str.nextToken() ;
 		String theClusteringColumn = str.nextToken();
+
 		return theClusteringColumn;
 	}
 
@@ -179,6 +184,7 @@ public class DBApp {
 		if (sign.equals("+")) {
 			PAGES.add(new Integer(modifiedPage));
 			pages++;
+			DATA.set(0, "PAGES: " + pages) ; 
 			serializingAnObject(DATA, currentDir + "\\" + strTableName + "\\DATA.ser");
 
 		} else {
@@ -205,7 +211,7 @@ public class DBApp {
 
 	}
 
-	private void serializingAnObject(Object newObject, String pathName) {
+	public void serializingAnObject(Object newObject, String pathName) {
 		try {
 			FileOutputStream fileOut = new FileOutputStream(pathName);
 			ObjectOutputStream out = new ObjectOutputStream(fileOut);
@@ -217,7 +223,7 @@ public class DBApp {
 		}
 	}
 
-	private Object deserializingAnObject(String Path) {
+	public Object deserializingAnObject(String Path) {
 		Object o = null;
 		try {
 			FileInputStream fileIn = new FileInputStream(Path);
@@ -292,16 +298,24 @@ public class DBApp {
 			String path = Path + "\\" + "Page" + PAGES.get(i).intValue() + ".ser";
 			Page deserializedPage = (Page) deserializingAnObject(path);
 			if (deserializedPage != null) {
+				if (deserializedPage.isEmpty()){
+					System.out.println(3);
+
+					return deserializedPage ; 
+				}
 				Hashtable<String, Object> lastRecord = deserializedPage.getLastElement();
 				Object lastValue = lastRecord.get(clustered);
 				boolean flag = comparingValues(value, lastValue, "LESS");
 				lastPage = deserializedPage;
 				if (flag) {
+					System.out.println(2);
+
 					return deserializedPage;
 				}
 			}
 
 		}
+		System.out.println(1);
 
 		return lastPage; // this line will be reached when we add the largest
 							// clustering key value, we should return the last
@@ -349,6 +363,9 @@ public class DBApp {
 				lastValue = lastPage.removeLastElement();
 				lastPage.addElement(value);
 				e.addElement(lastValue);
+				serializingAnObject(lastPage, currentDir + "\\" + strTableName + "\\" + lastPage.getPageName() + ".ser");
+				serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
+
 				break;
 			} else if (toAddIn.isFull()) {
 				lastValue = toAddIn.removeLastElement();

@@ -1,3 +1,4 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -6,14 +7,14 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 
-public class Page implements java.io.Serializable {
+public class Page implements Serializable {
 
-	private static final int MAX_ROWS = 200;
+	private static final int MAX_ROWS = 3;
 	private int numberOfRows;
 	private String tableName;
 	private String pageName;
 	private Vector<Hashtable<String, Object>> storage;
-	private sortingRecords sort;
+	private transient sortingRecords sort;
 	private String clusteringType;
 	private String clusteringValue;
 
@@ -27,7 +28,14 @@ public class Page implements java.io.Serializable {
 
 	public void addElement(Hashtable<String, Object> h) {
 		this.storage.add(h);
-		Collections.sort(storage, sort);
+		for (int i = 0 ; i < storage.size() ; i ++ ) { 
+			if (h.get(clusteringValue).toString().compareTo(storage.get(i).toString()) < 0 ) {
+				storage.insertElementAt(h, i);
+				break ; 
+			}
+		}
+		storage.add(h) ; 
+//		Collections.sort(storage, sort);
 		numberOfRows++;
 
 	}
@@ -39,7 +47,7 @@ public class Page implements java.io.Serializable {
 	}
 
 	public Hashtable<String, Object> getLastElement() {
-		return storage.get(storage.size() - 1);
+		return storage.get(storage.size()-1);
 	}
 
 	public Hashtable<String, Object> removeLastElement() {
