@@ -9,33 +9,38 @@ import java.util.Vector;
 
 public class Page implements Serializable {
 
-	private static final int MAX_ROWS = 3;
+	private static final int MAX_ROWS = 200;
 	private int numberOfRows;
 	private String tableName;
 	private String pageName;
 	private Vector<Hashtable<String, Object>> storage;
-	private transient sortingRecords sort;
 	private String clusteringType;
 	private String clusteringValue;
 
 	public Page(String strTableName, int number) {
 		numberOfRows = 0;
-		storage = new Vector<>(MAX_ROWS);
+		storage = new Vector<>();
 		pageName = "Page" + number;
 		tableName = strTableName;
-		sort = new sortingRecords();
 	}
-
+	public void printVector() { 
+		System.out.println(storage);
+	}
 	public void addElement(Hashtable<String, Object> h) {
-		this.storage.add(h);
-		for (int i = 0 ; i < storage.size() ; i ++ ) { 
-			if (h.get(clusteringValue).toString().compareTo(storage.get(i).toString()) < 0 ) {
+		System.out.println("size " + storage.size());
+
+		boolean flag = true;
+		for (int i = 0; i < storage.size(); i++) {
+			if (h.get(clusteringValue).toString().compareTo(storage.get(i).get(clusteringValue).toString()) < 0) {
 				storage.insertElementAt(h, i);
-				break ; 
+				flag = false;
+				break;
 			}
 		}
-		storage.add(h) ; 
-//		Collections.sort(storage, sort);
+		
+		 if (flag )
+		 storage.add(h) ;
+		
 		numberOfRows++;
 
 	}
@@ -43,11 +48,10 @@ public class Page implements Serializable {
 	public void setClustering(String value, String type) {
 		clusteringType = type;
 		clusteringValue = value;
-		sort.setClustering(value, type);
 	}
 
 	public Hashtable<String, Object> getLastElement() {
-		return storage.get(storage.size()-1);
+		return storage.get(storage.size() - 1);
 	}
 
 	public Hashtable<String, Object> removeLastElement() {
@@ -81,9 +85,9 @@ public class Page implements Serializable {
 			if (clusteredVal.equals(r.get(clusteringValue).toString())) {
 
 				for (int j = 0; j < updatingValues.size(); j++) {
-					
-					r.put(updatingValues.get(j), h.get(j)) ; 
-					r.put("TouchDate", new Date()) ; 
+			
+					r.put(updatingValues.get(j), h.get(updatingValues.get(j)));
+					r.put("TouchDate", new Date());
 				}
 
 			}
@@ -92,32 +96,7 @@ public class Page implements Serializable {
 
 	}
 
-
-//	String type = key.get(j);
-//	switch (type) {
-//	case "java.lang.Integer":
-//		if (((Integer) r.get(type)).intValue() == ((Integer) h.get(type)).intValue())
-//			counter++;
-//		break;
-//	case "java.lang.Double":
-//		if (((Double) r.get(type)).doubleValue() == ((Double) h.get(type)).doubleValue())
-//			counter++;
-//		break;
-//	case "java.lang.String":
-//		if (((String) r.get(type)).equals(((String) h.get(type))))
-//			counter++;
-//		break;
-//	case "java.lang.Boolean":
-//		if (((Boolean) r.get(type)).booleanValue() == ((Boolean) h.get(type)).booleanValue())
-//			counter++;
-//		break;
-//	case "java.util.Date":
-//		if (((Date) r.get(type)).compareTo(((Date) h.get(type))) == 0)
-//			counter++;
-//		break;
-//	}
-
-
+	
 	public int removeRecord(Hashtable<String, Object> h) {
 
 		Set keys = h.keySet();
@@ -132,19 +111,18 @@ public class Page implements Serializable {
 			Hashtable<String, Object> r = storage.get(i);
 			int counter = 0;
 			for (int j = 0; j < key.size(); j++) {
-				
-				String currentType = key.get(j) ; 
-				if (h.get(currentType).toString().equals(r.get(currentType).toString())) { 
-					counter ++ ; 
+
+				String currentType = key.get(j);
+				if (h.get(currentType).toString().equals(r.get(currentType).toString())) {
+					counter++;
+				} else {
+					break;
 				}
-				else { 
-					break ; 
-				}
-				
-				
+
 			}
 			if (counter == h.size()) {
 				storage.remove(r);
+				numberOfRows-- ;
 				numberOfRemovedRecords++;
 			}
 		}

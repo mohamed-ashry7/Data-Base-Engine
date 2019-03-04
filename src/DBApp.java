@@ -139,7 +139,7 @@ public class DBApp {
 
 		ArrayList<String> DATA = (ArrayList<String>) deserializingAnObject(
 				currentDir + "\\" + strTableName + "\\DATA.ser");
-		String PAGES =(String) DATA.get(0);
+		String PAGES = (String) DATA.get(0);
 		StringTokenizer str = new StringTokenizer(PAGES);
 		str.nextToken();
 		int pages = Integer.parseInt(str.nextToken());
@@ -164,7 +164,7 @@ public class DBApp {
 				currentDir + "\\" + strTableName + "\\DATA.ser");
 		String theColumn = DATA.get(2);
 		StringTokenizer str = new StringTokenizer(theColumn);
-		str.nextToken() ;
+		str.nextToken();
 		String theClusteringColumn = str.nextToken();
 
 		return theClusteringColumn;
@@ -184,7 +184,7 @@ public class DBApp {
 		if (sign.equals("+")) {
 			PAGES.add(new Integer(modifiedPage));
 			pages++;
-			DATA.set(0, "PAGES: " + pages) ; 
+			DATA.set(0, "PAGES: " + pages);
 			serializingAnObject(DATA, currentDir + "\\" + strTableName + "\\DATA.ser");
 
 		} else {
@@ -287,7 +287,16 @@ public class DBApp {
 		}
 		return false;
 	}
+	public void showContent() { 
+		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(currentDir + "\\Student" + "\\PAGES.ser");
+		
+		
+		for (int i = 0 ; i < PAGES.size() ; i ++ ) { 
+			Page e = (Page) deserializingAnObject(currentDir + "\\Student\\Page" + PAGES.get(i).intValue() + ".ser") ; 
+			e.printVector();
+		}
 
+	}
 	private Page whichPage(Hashtable<String, Object> record, String clustered, String Path) {
 		Page lastPage = null;
 		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(Path + "\\PAGES.ser");
@@ -298,10 +307,10 @@ public class DBApp {
 			String path = Path + "\\" + "Page" + PAGES.get(i).intValue() + ".ser";
 			Page deserializedPage = (Page) deserializingAnObject(path);
 			if (deserializedPage != null) {
-				if (deserializedPage.isEmpty()){
+				if (deserializedPage.isEmpty()) {
 					System.out.println(3);
 
-					return deserializedPage ; 
+					return deserializedPage;
 				}
 				Hashtable<String, Object> lastRecord = deserializedPage.getLastElement();
 				Object lastValue = lastRecord.get(clustered);
@@ -358,21 +367,36 @@ public class DBApp {
 		Page lastPage = lastPage(currentDir + "\\" + strTableName);
 		while (true) {
 			Page toAddIn = whichPage(value, clusteringColumn, currentDir + "\\" + strTableName);
-			if (toAddIn.isFull() && toAddIn.equals(lastPage)) {
+
+			if (toAddIn.isFull() && toAddIn.getPageName().equals(lastPage.getPageName())) {
+				System.out.println(11);
+
 				Page e = createPage(strTableName, htblColNameValue);
-				lastValue = lastPage.removeLastElement();
-				lastPage.addElement(value);
-				e.addElement(lastValue);
-				serializingAnObject(lastPage, currentDir + "\\" + strTableName + "\\" + lastPage.getPageName() + ".ser");
+				if (lastPage.getLastElement().get(clusteringColumn).toString()
+						.compareTo(value.get(clusteringColumn).toString()) < 0) {
+					
+					e.addElement(value);
+
+
+				} else {
+					lastValue = lastPage.removeLastElement();
+					lastPage.addElement(value);
+					e.addElement(lastValue);
+				}
+				serializingAnObject(lastPage,
+						currentDir + "\\" + strTableName + "\\" + lastPage.getPageName() + ".ser");
 				serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
 
 				break;
 			} else if (toAddIn.isFull()) {
+				System.out.println(22);
+
 				lastValue = toAddIn.removeLastElement();
 				toAddIn.addElement(value);
 				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
 				value = lastValue;
 			} else {
+				System.out.println(33);
 				toAddIn.addElement(value);
 				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
 				break;
@@ -419,7 +443,7 @@ public class DBApp {
 				int numberOfDeletions = e.removeRecord(value);
 				changeNoRows(strTableName, "-", numberOfDeletions);
 				if (e.isEmpty()) {
-					File f = new File(currentDir + "\\" + strTableName + "\\" + "Page" + i + ".ser");
+					File f = new File(currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
 					f.delete();
 					changeNoPages(strTableName, "-", PAGES.get(i).intValue());
 				} else {
