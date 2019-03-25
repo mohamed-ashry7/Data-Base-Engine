@@ -48,12 +48,15 @@ public class Page implements Serializable {
 		}
 
 	}
-
-	public void addElement(Hashtable<String, Object> h) {
+	
+	
+	
+	public int  addElement(Hashtable<String, Object> h) {
 		System.out.println("size " + storage.size());
 
 		boolean flag = true;
-		for (int i = 0; i < storage.size(); i++) {
+		int i = 0 ; 
+		for (; i < storage.size(); i++) {
 			if (h.get(clusteringValue).toString().compareTo(storage.get(i).get(clusteringValue).toString()) < 0) {
 				storage.insertElementAt(h, i);
 				flag = false;
@@ -63,6 +66,7 @@ public class Page implements Serializable {
 
 		if (flag)
 			storage.add(h);
+		return i ; 
 
 	}
 

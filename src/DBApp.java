@@ -382,7 +382,10 @@ public class DBApp implements Serializable {
 	///////////////////////////////// INSERT
 	/////////////////////////////////////////////////////////////////////////////////
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
-
+		/*
+		 * you must check if the column indexed and if it is you must check the
+		 * new values if it is unique or no
+		 */
 		Hashtable<String, Object> value = mapHash(htblColNameValue);
 		validateTypesOfValues(htblColNameValue, strTableName);
 		value.put("TouchDate", new Date());
@@ -521,12 +524,13 @@ public class DBApp implements Serializable {
 
 	public int getNumberOfCreatedBitmaps(String strTableName, String strColName) {
 
-		File folder = new File("your/path");
+		File folder = new File(currentDir + "\\data\\" + strTableName);
 		File[] listOfFiles = folder.listFiles();
 		int num = 0;
 		for (int i = 0; i < listOfFiles.length; i++) {
-			if (Pattern.matches("Bitmap" + strColName + ".", listOfFiles[i].getName())) {
-				num = (int) (Math.max(num, Integer.parseInt(listOfFiles[i].getName().substring(6))));
+			if (listOfFiles[i].getName().charAt(0) == 'B') {
+				num = (int) (Math.max(num, Integer
+						.parseInt(listOfFiles[i].getName().substring(6, listOfFiles[i].getName().length() - 4))));
 
 			}
 		}
@@ -581,7 +585,7 @@ public class DBApp implements Serializable {
 					currentDir + "\\data\\" + strTableName + "\\Page" + PAGES.get(i) + ".ser");
 			Vector<Hashtable<String, Object>> storage = e.getValues();
 			for (int f = 0; i < distinct.size(); f++) {
-				bitmaps[f] += bitmaps[f] + e.getPageName();
+				bitmaps[f] += bitmaps[f] + e.getPageName() + ",";
 			}
 			for (int j = 0; j < storage.size(); j++) {
 				Hashtable<String, Object> record = storage.get(i);
@@ -597,6 +601,9 @@ public class DBApp implements Serializable {
 				}
 
 			}
+			for (int f = 0; i < distinct.size(); f++) {
+				bitmaps[f] += bitmaps[f] + ",";
+			}
 		}
 		Properties properties = new Properties();
 		try {
@@ -608,8 +615,8 @@ public class DBApp implements Serializable {
 		int max = Integer.parseInt(value);
 		for (int j = 1; j <= (int) Math.ceil(bitmaps.length / max); j++) {
 			Bitmap newBitmap = new Bitmap(strTableName, j, this, strColName);
-			int i = 0 ; 
-			for (; i <(int ) Math.min(max,bitmaps.length); i++) {
+			int i = 0;
+			for (; i < (int) Math.min(max, bitmaps.length); i++) {
 				ArrayList<Triple> bitmapOfValue = compressRLE(bitmaps[i]);
 				Hashtable<Object, ArrayList<Triple>> bitmap = new Hashtable<>();
 				bitmap.put(distinct.get(i), bitmapOfValue);
@@ -624,11 +631,150 @@ public class DBApp implements Serializable {
 
 	public ArrayList<Triple> compressRLE(String zeroAndOne) {
 		String compressed = "";
-		for (int i = 0; i < zeroAndOne.length(); i++) {
+		StringTokenizer st = new StringTokenizer(zeroAndOne, ",");
+		ArrayList<Triple> compressForm = new ArrayList<>();
+		while (st.hasMoreTokens()) {
+			String pageName = st.nextToken();
+			String simplifiedForm = st.nextToken();
+			char currentChar = simplifiedForm.charAt(0);
+			int occurances = 1;
+			for (int i = 1; i < simplifiedForm.length() - 1; i++) {
+
+				if (currentChar != simplifiedForm.charAt(i)) {
+					Triple p = new Triple(pageName, occurances, currentChar);
+					compressForm.add(p);
+					occurances = 1;
+					currentChar = simplifiedForm.charAt(i);
+				} else {
+					occurances++;
+				}
+			}
+			Triple p = new Triple(pageName, occurances, currentChar);
+			compressForm.add(p);
 
 		}
 
 		return null;
+	}
+
+
+	public String decompressRLE(Triple p) {
+		String decompressedForm = "";
+		int numberOfVal = p.getNumberOfValue();
+		for (int i = 0; i < numberOfVal; i++) {
+			decompressedForm += p.getValue();
+		}
+
+		return decompressedForm;
+	}
+	
+	public void deleteBitmapValue(String strTableName , Object val  ) { 
+		/*
+		 * you would mimic the delete of table one  
+		 */
+	}
+	public void insertNewBitmapValue(String strTableName ){
+/*
+ * 
+ * 
+ * you would mimic the insert of table ; 		
+ */
+		
+		
+		
+	}
+	
+	
+	public void deleteValueBitmapIndex(String strTableName, String pageName, Object val, int position){
+		File folder = new File(currentDir + "\\data\\" + strTableName);
+		File[] listOfFiles = folder.listFiles();
+		for (int i = 0; i < listOfFiles.length; i++) {
+			if (listOfFiles[i].getName().charAt(0) == 'B') {
+				Bitmap b = (Bitmap) deserializingAnObject(
+						currentDir + "\\data\\" + strTableName + "\\" + listOfFiles[i].getName());
+				Vector<Hashtable<Object, ArrayList<Triple>>> allElements = b.getAllBitmaps();
+				for (int j = 0; j < allElements.size(); j++) {
+					Hashtable<Object, ArrayList<Triple>> record = allElements.get(i);
+					Object key = record.keys().nextElement();
+					ArrayList<Triple> arr = record.get(key);
+
+					for (int k = 0; k < arr.size(); k++) {
+						int cumulative = 0;
+						if (arr.get(k).getPageName().equals(pageName)) {
+							if (position > cumulative) {
+								cumulative += arr.get(k).getNumberOfValue();
+							} else {
+								String decompressed = decompressRLE(arr.get(k));
+								arr.remove(k) ; 
+								int index = position - cumulative;
+								String modified = "";
+								if (val.toString().equals(key.toString())) {
+									modified = decompressed.substring(0, index) + decompressed.substring(index+1);
+
+								} else {
+									modified = decompressed.substring(0, index) + decompressed.substring(index+1);
+
+								}
+								ArrayList<Triple> compressed = compressRLE(modified) ; 
+								
+								arr.addAll(k,compressed) ; 
+							}
+						}
+					}
+
+				}
+				b.setAllBitmaps(allElements);
+				serializingAnObject(b, currentDir + "\\data\\" + strTableName +"\\"+ b.getBitmapName());
+			}
+		}
+
+	
+		
+	}
+	public void insertValueBitmapIndex(String strTableName, String pageName, Object val, int position) {
+		File folder = new File(currentDir + "\\data\\" + strTableName);
+		File[] listOfFiles = folder.listFiles();
+		for (int i = 0; i < listOfFiles.length; i++) {
+			if (listOfFiles[i].getName().charAt(0) == 'B') {
+				Bitmap b = (Bitmap) deserializingAnObject(
+						currentDir + "\\data\\" + strTableName + "\\" + listOfFiles[i].getName());
+				Vector<Hashtable<Object, ArrayList<Triple>>> allElements = b.getAllBitmaps();
+				for (int j = 0; j < allElements.size(); j++) {
+					Hashtable<Object, ArrayList<Triple>> record = allElements.get(i);
+					Object key = record.keys().nextElement();
+					ArrayList<Triple> arr = record.get(key);
+
+					for (int k = 0; k < arr.size(); k++) {
+						int cumulative = 0;
+						if (arr.get(k).getPageName().equals(pageName)) {
+							if (position > cumulative) {
+								cumulative += arr.get(k).getNumberOfValue();
+							} else {
+								String decompressed = decompressRLE(arr.get(k));
+								arr.remove(k) ; 
+								int index = position - cumulative;
+								String modified = "";
+								if (val.toString().equals(key.toString())) {
+									modified = decompressed.substring(0, index) + "1" + decompressed.substring(index);
+
+								} else {
+									modified = decompressed.substring(0, index) + "0" + decompressed.substring(index);
+
+								}
+								ArrayList<Triple> compressed = compressRLE(modified) ; 
+								
+								arr.addAll(k,compressed) ; 
+							}
+						}
+					}
+
+				}
+				b.setAllBitmaps(allElements);
+				serializingAnObject(b, currentDir + "\\data\\" + strTableName +"\\"+ b.getBitmapName());
+
+			}
+		}
+
 	}
 
 	static class Triple {
@@ -642,11 +788,11 @@ public class DBApp implements Serializable {
 			this.value = val;
 		}
 
-		public String getPageNumber() {
+		public String getPageName() {
 			return pageName;
 		}
 
-		public void setPageNumber(String pageName) {
+		public void setPageName(String pageName) {
 			this.pageName = pageName;
 		}
 

@@ -2,14 +2,15 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
+import javax.swing.text.html.HTMLDocument.Iterator;
+/*
+ * you must check the methods 
+ */
 public class Bitmap implements Serializable {
 	String currentDire = System.getProperty("user.dir");
 
@@ -39,11 +40,27 @@ public class Bitmap implements Serializable {
 	
 
 	public void addElement(Hashtable<Object, ArrayList<DBApp.Triple>>h) {
-		
 
+		Object value = h.keys().nextElement(); 
+		boolean flag = true ; 
+		for (int i = 0 ; i < storage.size() ; i ++ ) { 
+			if (value.toString().compareTo(storage.get(i).toString())<0) { 
+				storage.insertElementAt(h, i);
+				flag = false;
+				break;
+				
+			}
+		}
+		if (flag)
+			storage.add(h);
 	}
-
-
+	
+	public Vector<Hashtable<Object , ArrayList<DBApp.Triple>>> getAllBitmaps () { 
+		return storage ; 
+	}
+	public void setAllBitmaps (Vector store) { 
+		this.storage = store ;  
+	}
 //	public Hashtable<String, Object> getLastElement() {
 //		return storage.get(storage.size() - 1);
 //	}
@@ -52,6 +69,8 @@ public class Bitmap implements Serializable {
 //		return storage.remove(storage.size() - 1);
 //	}
 
+	
+	
 	public String getBitmapName() {
 		return BitmapName;
 	}
