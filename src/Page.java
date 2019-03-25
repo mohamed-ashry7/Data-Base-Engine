@@ -1,31 +1,54 @@
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
 public class Page implements Serializable {
+	String currentDire = System.getProperty("user.dir");
 
-	private static final int MAX_ROWS = 200;
-	private int numberOfRows;
+	private int MAX_ROWS;
 	private String tableName;
 	private String pageName;
 	private Vector<Hashtable<String, Object>> storage;
 	private String clusteringType;
 	private String clusteringValue;
+	private DBApp theTable;
 
-	public Page(String strTableName, int number) {
-		numberOfRows = 0;
+	public Page(String strTableName, int number, DBApp table) {
+		Properties properties = new Properties();
+		try {
+			properties.load(new FileInputStream(currentDire + "\\config\\config.properties"));
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+		}
+		String value = properties.getProperty("maxNumberRows");
+		MAX_ROWS = Integer.parseInt(value);
+
 		storage = new Vector<>();
 		pageName = "Page" + number;
 		tableName = strTableName;
+		theTable = table;
 	}
-	public void printVector() { 
-		System.out.println(storage);
+
+	public Vector<Hashtable<String, Object>> getValues() {
+
+		return storage;
 	}
+
+	public void printVector() {
+		for (int i = 0; i < storage.size(); i++) {
+			System.out.println(storage.get(i));
+		}
+
+	}
+
 	public void addElement(Hashtable<String, Object> h) {
 		System.out.println("size " + storage.size());
 
@@ -37,11 +60,9 @@ public class Page implements Serializable {
 				break;
 			}
 		}
-		
-		 if (flag )
-		 storage.add(h) ;
-		
-		numberOfRows++;
+
+		if (flag)
+			storage.add(h);
 
 	}
 
@@ -63,11 +84,15 @@ public class Page implements Serializable {
 	}
 
 	public boolean isFull() {
-		return numberOfRows == MAX_ROWS;
+		return storage.size() == MAX_ROWS;
 	}
 
 	public boolean isEmpty() {
-		return numberOfRows == 0;
+		return storage.size() == 0;
+	}
+
+	public int getNumberOfRows() {
+		return storage.size();
 	}
 
 	public void updateRecord(String clusteredVal, Hashtable<String, Object> h) {
@@ -75,8 +100,13 @@ public class Page implements Serializable {
 		Set keys = h.keySet();
 		Iterator<String> it = keys.iterator();
 		ArrayList<String> updatingValues = new ArrayList<>();
+		boolean isID = false;
 		while (it.hasNext()) {
-			updatingValues.add(it.next());
+			String k = it.next();
+			updatingValues.add(k);
+			if (k.equals(clusteringValue)) {
+				isID = true;
+			}
 		}
 		for (int i = 0; i < storage.size(); i++) {
 
@@ -85,9 +115,20 @@ public class Page implements Serializable {
 			if (clusteredVal.equals(r.get(clusteringValue).toString())) {
 
 				for (int j = 0; j < updatingValues.size(); j++) {
-			
+
 					r.put(updatingValues.get(j), h.get(updatingValues.get(j)));
 					r.put("TouchDate", new Date());
+
+				}
+				if (isID) {
+					storage.remove(i);
+
+					try {
+						System.out.println(theTable);
+						theTable.insertIntoTable(tableName, r);
+					} catch (DBAppException e) {
+						e.printStackTrace();
+					}
 				}
 
 			}
@@ -96,16 +137,18 @@ public class Page implements Serializable {
 
 	}
 
-	
 	public int removeRecord(Hashtable<String, Object> h) {
 
 		Set keys = h.keySet();
 		Iterator<String> it = keys.iterator();
 		ArrayList<String> key = new ArrayList<>();
 		while (it.hasNext()) {
-			key.add(it.next());
+			String k = it.next();
+			key.add(k);
 		}
 		int numberOfRemovedRecords = 0;
+		this.printVector();
+
 		for (int i = 0; i < storage.size(); i++) {
 
 			Hashtable<String, Object> r = storage.get(i);
@@ -113,6 +156,7 @@ public class Page implements Serializable {
 			for (int j = 0; j < key.size(); j++) {
 
 				String currentType = key.get(j);
+
 				if (h.get(currentType).toString().equals(r.get(currentType).toString())) {
 					counter++;
 				} else {
@@ -121,8 +165,8 @@ public class Page implements Serializable {
 
 			}
 			if (counter == h.size()) {
-				storage.remove(r);
-				numberOfRows-- ;
+				storage.remove(i);
+				i--;
 				numberOfRemovedRecords++;
 			}
 		}

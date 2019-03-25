@@ -4,29 +4,54 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
+import java.util.Vector;
+import java.util.regex.Pattern;
 
-public class DBApp {
+public class DBApp implements Serializable {
 	String currentDir = System.getProperty("user.dir");
 
 	////////////////////////////////////////// CREATE
-	////////////////////////////////////////// ////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////
+	public void checkIfExists(String strTableName) throws DBAppException {
+		File file = new File(currentDir + "\\data");
+		String[] directories = file.list(new FilenameFilter() {
+			@Override
+			public boolean accept(File current, String name) {
+				return new File(current, name).isDirectory();
+			}
+		});
+		for (int i = 0; i < directories.length; i++) {
+			if (directories[i].equals(strTableName)) {
+				throw new DBAppException("SORRY THE TABLE NAME ALREADY EXISTS");
+			}
+		}
+	}
+
 	public void createTable(String strTableName, String strClusteringKeyColumn,
 			Hashtable<String, String> htblColNameType) throws DBAppException {
 
+		checkIfExists(strTableName);
+
 		String tableName = strTableName;
-		new File(currentDir + "\\" + tableName).mkdirs();
+		new File(currentDir + "\\data\\" + tableName).mkdirs();
 
 		Set keySet = htblColNameType.keySet();
 
@@ -34,7 +59,7 @@ public class DBApp {
 		validateEnteredTypes(TypeSet);
 		// changed the file OF DATA to be arraylist saved in .ser file to make
 		// sure no one can edit it
-		File metaData = new File(currentDir + "\\" + tableName + "\\metadata.csv");
+		File metaData = new File(currentDir + "\\data\\" + tableName + "\\metadata.csv");
 		ArrayList<String> DATA = new ArrayList<>();
 		ArrayList<Integer> PAGES = new ArrayList<>();
 
@@ -42,8 +67,8 @@ public class DBApp {
 			DATA.add("PAGES: " + 0);
 			DATA.add("Rows: " + 0);
 			DATA.add("ClusteringTable: " + strClusteringKeyColumn);
-			serializingAnObject(DATA, currentDir + "\\" + tableName + "\\DATA.ser");
-			serializingAnObject(PAGES, currentDir + "\\" + tableName + "\\PAGES.ser");
+			serializingAnObject(DATA, currentDir + "\\data\\" + tableName + "\\DATA.ser");
+			serializingAnObject(PAGES, currentDir + "\\data\\" + tableName + "\\PAGES.ser");
 
 			PrintWriter writer = new PrintWriter(metaData.getPath());
 			String firstLine = "Table Name , Column Name , Column Type , Key , Indexed";
@@ -70,7 +95,7 @@ public class DBApp {
 
 	private void validateTypesOfValues(Hashtable<String, Object> h, String strTableName) throws DBAppException {
 
-		File tableName = new File(currentDir + "\\" + strTableName);
+		File tableName = new File(currentDir + "\\data\\" + strTableName);
 		if (tableName == null) {
 			throw new DBAppException("THIS TABLE DOES NOT EXIST ");
 		}
@@ -81,7 +106,7 @@ public class DBApp {
 		while (it.hasNext()) {
 			newArr.add(it.next());
 		}
-		File f = new File(currentDir + "\\" + strTableName + "\\metadata.csv");
+		File f = new File(currentDir + "\\data\\" + strTableName + "\\metadata.csv");
 		BufferedReader br = null;
 		try {
 			br = new BufferedReader(new FileReader(f));
@@ -138,7 +163,7 @@ public class DBApp {
 	private int numberOfCreatedPages(String strTableName) {
 
 		ArrayList<String> DATA = (ArrayList<String>) deserializingAnObject(
-				currentDir + "\\" + strTableName + "\\DATA.ser");
+				currentDir + "\\data\\" + strTableName + "\\DATA.ser");
 		String PAGES = (String) DATA.get(0);
 		StringTokenizer str = new StringTokenizer(PAGES);
 		str.nextToken();
@@ -161,7 +186,7 @@ public class DBApp {
 
 	private String clusteringColumn(String strTableName) {
 		ArrayList<String> DATA = (ArrayList<String>) deserializingAnObject(
-				currentDir + "\\" + strTableName + "\\DATA.ser");
+				currentDir + "\\data\\" + strTableName + "\\DATA.ser");
 		String theColumn = DATA.get(2);
 		StringTokenizer str = new StringTokenizer(theColumn);
 		str.nextToken();
@@ -173,9 +198,9 @@ public class DBApp {
 	private void changeNoPages(String strTableName, String sign, int modifiedPage) {
 
 		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
-				currentDir + "\\" + strTableName + "\\PAGES.ser");
+				currentDir + "\\data\\" + strTableName + "\\PAGES.ser");
 		ArrayList<String> DATA = (ArrayList<String>) deserializingAnObject(
-				currentDir + "\\" + strTableName + "\\DATA.ser");
+				currentDir + "\\data\\" + strTableName + "\\DATA.ser");
 		StringTokenizer str = new StringTokenizer(DATA.get(0));
 		str.nextToken();
 		int pages = Integer.parseInt(str.nextToken());
@@ -185,19 +210,19 @@ public class DBApp {
 			PAGES.add(new Integer(modifiedPage));
 			pages++;
 			DATA.set(0, "PAGES: " + pages);
-			serializingAnObject(DATA, currentDir + "\\" + strTableName + "\\DATA.ser");
+			serializingAnObject(DATA, currentDir + "\\data\\" + strTableName + "\\DATA.ser");
 
 		} else {
 			PAGES.remove(new Integer(modifiedPage));
 		}
-		serializingAnObject(PAGES, currentDir + "\\" + strTableName + "\\PAGES.ser");
+		serializingAnObject(PAGES, currentDir + "\\data\\" + strTableName + "\\PAGES.ser");
 
 	}
 
 	private void changeNoRows(String strTableName, String sign, int numberOfValues) {
 
 		ArrayList<String> DATA = (ArrayList<String>) deserializingAnObject(
-				currentDir + "\\" + strTableName + "\\DATA.ser");
+				currentDir + "\\data\\" + strTableName + "\\DATA.ser");
 		String RECORDS = DATA.get(1);
 		StringTokenizer str = new StringTokenizer(RECORDS);
 		str.nextToken();
@@ -207,7 +232,7 @@ public class DBApp {
 		else
 			records -= numberOfValues;
 		DATA.set(1, "ROWS: " + records);
-		serializingAnObject(DATA, currentDir + "\\" + strTableName + "\\DATA.ser");
+		serializingAnObject(DATA, currentDir + "\\data\\" + strTableName + "\\DATA.ser");
 
 	}
 
@@ -287,17 +312,20 @@ public class DBApp {
 		}
 		return false;
 	}
-	public void showContent() { 
-		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(currentDir + "\\Student" + "\\PAGES.ser");
-		
-		
-		for (int i = 0 ; i < PAGES.size() ; i ++ ) { 
-			Page e = (Page) deserializingAnObject(currentDir + "\\Student\\Page" + PAGES.get(i).intValue() + ".ser") ; 
+
+	public void showContent(String tableName) {
+		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
+				currentDir + "\\data\\" + tableName + "\\PAGES.ser");
+
+		for (int i = 0; i < PAGES.size(); i++) {
+			Page e = (Page) deserializingAnObject(
+					currentDir + "\\data\\" + tableName + "\\Page" + PAGES.get(i).intValue() + ".ser");
 			e.printVector();
 		}
 
 	}
-	private Page whichPage(Hashtable<String, Object> record, String clustered, String Path) {
+
+	private Page whichBlock(Hashtable<String, Object> record, String clustered, String Path) {
 		Page lastPage = null;
 		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(Path + "\\PAGES.ser");
 		Object value = record.get(clustered);
@@ -343,10 +371,11 @@ public class DBApp {
 		String clusteringColumn = clusteringColumn(strTableName);
 		String clusteringColumnType = htblColNameValue.get(clusteringColumn).getClass().getName();
 		numberOfCreatedPages++;
-		Page e = new Page(strTableName, numberOfCreatedPages);
+		Page e = new Page(strTableName, numberOfCreatedPages, this);
 		e.setClustering(clusteringColumn, clusteringColumnType);
 		changeNoPages(strTableName, "+", numberOfCreatedPages);
-		serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
+		System.out.println(currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
+		serializingAnObject(e, currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
 		return e;
 	}
 
@@ -364,9 +393,9 @@ public class DBApp {
 			createPage(strTableName, htblColNameValue);
 		}
 		Hashtable<String, Object> lastValue = null;
-		Page lastPage = lastPage(currentDir + "\\" + strTableName);
+		Page lastPage = lastPage(currentDir + "\\data\\" + strTableName);
 		while (true) {
-			Page toAddIn = whichPage(value, clusteringColumn, currentDir + "\\" + strTableName);
+			Page toAddIn = whichBlock(value, clusteringColumn, currentDir + "\\data\\" + strTableName);
 
 			if (toAddIn.isFull() && toAddIn.getPageName().equals(lastPage.getPageName())) {
 				System.out.println(11);
@@ -374,9 +403,8 @@ public class DBApp {
 				Page e = createPage(strTableName, htblColNameValue);
 				if (lastPage.getLastElement().get(clusteringColumn).toString()
 						.compareTo(value.get(clusteringColumn).toString()) < 0) {
-					
-					e.addElement(value);
 
+					e.addElement(value);
 
 				} else {
 					lastValue = lastPage.removeLastElement();
@@ -384,8 +412,8 @@ public class DBApp {
 					e.addElement(lastValue);
 				}
 				serializingAnObject(lastPage,
-						currentDir + "\\" + strTableName + "\\" + lastPage.getPageName() + ".ser");
-				serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
+						currentDir + "\\data\\" + strTableName + "\\" + lastPage.getPageName() + ".ser");
+				serializingAnObject(e, currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
 
 				break;
 			} else if (toAddIn.isFull()) {
@@ -393,12 +421,14 @@ public class DBApp {
 
 				lastValue = toAddIn.removeLastElement();
 				toAddIn.addElement(value);
-				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
+				serializingAnObject(toAddIn,
+						currentDir + "\\data\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
 				value = lastValue;
 			} else {
 				System.out.println(33);
 				toAddIn.addElement(value);
-				serializingAnObject(toAddIn, currentDir + "\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
+				serializingAnObject(toAddIn,
+						currentDir + "\\data\\" + strTableName + "\\" + toAddIn.getPageName() + ".ser");
 				break;
 			}
 
@@ -415,13 +445,13 @@ public class DBApp {
 		String clusteringValue = strKey;
 		Hashtable<String, Object> value = mapHash(htblColNameValue);
 		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
-				currentDir + "\\" + strTableName + "\\PAGES.ser");
+				currentDir + "\\data\\" + strTableName + "\\PAGES.ser");
 		for (int i = 0; i < PAGES.size(); i++) {
 			Page e = (Page) deserializingAnObject(
-					currentDir + "\\" + strTableName + "\\" + "Page" + PAGES.get(i).intValue() + ".ser");
+					currentDir + "\\data\\" + strTableName + "\\" + "Page" + PAGES.get(i).intValue() + ".ser");
 			if (e != null) {
 				e.updateRecord(clusteringValue, htblColNameValue);
-				serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
+				serializingAnObject(e, currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
 
 			}
 		}
@@ -435,21 +465,205 @@ public class DBApp {
 		String clusteringColumn = clusteringColumn(strTableName);
 		Hashtable<String, Object> value = mapHash(htblColNameValue);
 		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
-				currentDir + "\\" + strTableName + "\\PAGES.ser");
+				currentDir + "\\data\\" + strTableName + "\\PAGES.ser");
 		for (int i = 0; i < PAGES.size(); i++) {
 			Page e = (Page) deserializingAnObject(
-					currentDir + "\\" + strTableName + "\\" + "Page" + PAGES.get(i).intValue() + ".ser");
+					currentDir + "\\data\\" + strTableName + "\\" + "Page" + PAGES.get(i).intValue() + ".ser");
 			if (e != null) {
 				int numberOfDeletions = e.removeRecord(value);
 				changeNoRows(strTableName, "-", numberOfDeletions);
 				if (e.isEmpty()) {
-					File f = new File(currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
+					File f = new File(currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
 					f.delete();
 					changeNoPages(strTableName, "-", PAGES.get(i).intValue());
 				} else {
-					serializingAnObject(e, currentDir + "\\" + strTableName + "\\" + e.getPageName() + ".ser");
+					serializingAnObject(e, currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
 				}
 			}
+		}
+
+	}
+	////////////////////////////////////////////////////////////// BITMAP INDEX
+	////////////////////////////////////////////////////////////// ////////////////////////////////////////////////////////////
+
+	private ArrayList<Object> getDistinctValues(String tableName, String colName) {
+
+		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
+				currentDir + "\\data\\" + tableName + "\\PAGES.ser");
+		TreeSet<Object> tree = new TreeSet<>();
+		ArrayList<Object> distinctValues = new ArrayList<>();
+
+		for (int i = 0; i < PAGES.size(); i++) {
+			Page e = (Page) deserializingAnObject(
+					currentDir + "\\data\\" + tableName + "\\Page" + PAGES.get(i) + ".ser");
+			Vector<Hashtable<String, Object>> storage = e.getValues();
+			for (int j = 0; j < storage.size(); j++) {
+				Hashtable<String, Object> record = storage.get(i);
+				Object o = record.get(colName);
+				tree.add(o);
+			}
+		}
+
+		for (Object insta : tree) {
+			distinctValues.add(insta);
+		}
+		return distinctValues;
+	}
+
+	/*
+	 *  
+					
+					
+				
+	 * 
+	 * 
+	 * */
+
+	public int getNumberOfCreatedBitmaps(String strTableName, String strColName) {
+
+		File folder = new File("your/path");
+		File[] listOfFiles = folder.listFiles();
+		int num = 0;
+		for (int i = 0; i < listOfFiles.length; i++) {
+			if (Pattern.matches("Bitmap" + strColName + ".", listOfFiles[i].getName())) {
+				num = (int) (Math.max(num, Integer.parseInt(listOfFiles[i].getName().substring(6))));
+
+			}
+		}
+		return num;
+
+	}
+
+	public void createBitmapIndex(String strTableName, String strColName) throws DBAppException {
+
+		File ff = new File(currentDir + "\\data\\" + strTableName + "\\metadata.csv");
+
+		try {
+
+			BufferedReader br = new BufferedReader(new FileReader(ff));
+			String theData = "";
+			String line;
+			while ((line = br.readLine()) != null) {
+				theData += line + "\n";
+
+			}
+			br.close();
+
+			PrintWriter pw = new PrintWriter(ff.getPath());
+			BufferedReader brr = new BufferedReader(new StringReader(theData));
+			while ((line = brr.readLine()) != null) {
+				String[] linee = line.split(",");
+				if (linee[1].equals(strColName)) {
+					linee[4] = "TRUE";
+				}
+				String koko = "";
+				for (int i = 0; i < linee.length; i++) {
+					koko = linee[i] + ",";
+				}
+				pw.println(koko);
+			}
+			pw.flush();
+			pw.close();
+
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (IOException e2) {
+			e2.printStackTrace();
+		}
+
+		ArrayList<Object> distinct = getDistinctValues(strTableName, strColName);
+		String[] bitmaps = new String[distinct.size()];
+		Arrays.fill(bitmaps, "");
+		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
+				currentDir + "\\data\\" + strTableName + "\\PAGES.ser");
+		for (int i = 0; i < PAGES.size(); i++) {
+			Page e = (Page) deserializingAnObject(
+					currentDir + "\\data\\" + strTableName + "\\Page" + PAGES.get(i) + ".ser");
+			Vector<Hashtable<String, Object>> storage = e.getValues();
+			for (int f = 0; i < distinct.size(); f++) {
+				bitmaps[f] += bitmaps[f] + e.getPageName();
+			}
+			for (int j = 0; j < storage.size(); j++) {
+				Hashtable<String, Object> record = storage.get(i);
+				Object o = record.get(strColName);
+				int index = distinct.indexOf(o);
+
+				for (int k = 0; k < distinct.size(); k++) {
+					if (k == index)
+						bitmaps[k] = bitmaps[k] + "1";
+					else
+						bitmaps[k] = bitmaps[k] + "0";
+
+				}
+
+			}
+		}
+		Properties properties = new Properties();
+		try {
+			properties.load(new FileInputStream(currentDir + "\\config\\config.properties"));
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+		}
+		String value = properties.getProperty("maxNumberRows");
+		int max = Integer.parseInt(value);
+		for (int j = 1; j <= (int) Math.ceil(bitmaps.length / max); j++) {
+			Bitmap newBitmap = new Bitmap(strTableName, j, this, strColName);
+			int i = 0 ; 
+			for (; i <(int ) Math.min(max,bitmaps.length); i++) {
+				ArrayList<Triple> bitmapOfValue = compressRLE(bitmaps[i]);
+				Hashtable<Object, ArrayList<Triple>> bitmap = new Hashtable<>();
+				bitmap.put(distinct.get(i), bitmapOfValue);
+				newBitmap.addElement(bitmap);
+			}
+
+			serializingAnObject(newBitmap,
+					currentDir + "\\data\\" + strTableName + "\\" + newBitmap.getBitmapName() + ".ser");
+		}
+
+	}
+
+	public ArrayList<Triple> compressRLE(String zeroAndOne) {
+		String compressed = "";
+		for (int i = 0; i < zeroAndOne.length(); i++) {
+
+		}
+
+		return null;
+	}
+
+	static class Triple {
+		private String pageName;
+		private int numberOfValue;
+		private int value;
+
+		public Triple(String pageName, int numberValues, int val) {
+			this.pageName = pageName;
+			this.numberOfValue = numberValues;
+			this.value = val;
+		}
+
+		public String getPageNumber() {
+			return pageName;
+		}
+
+		public void setPageNumber(String pageName) {
+			this.pageName = pageName;
+		}
+
+		public int getNumberOfValue() {
+			return numberOfValue;
+		}
+
+		public void setNumberOfValue(int numberOfValue) {
+			this.numberOfValue = numberOfValue;
+		}
+
+		public int getValue() {
+			return value;
+		}
+
+		public void setValue(int value) {
+			this.value = value;
 		}
 
 	}
