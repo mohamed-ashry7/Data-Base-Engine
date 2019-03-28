@@ -18,7 +18,7 @@ public class Bitmap implements Serializable {
 	private String tableName;
 	private String BitmapName;
 	private Vector<Hashtable<Object, ArrayList<DBApp.Triple>>> storage;
-	private DBApp theTable;
+	private  DBApp theTable;
 
 	public Bitmap(String strTableName, int number, DBApp table ,String column ) {
 		Properties properties = new Properties();
@@ -37,8 +37,11 @@ public class Bitmap implements Serializable {
 
 	
 
-	
 
+	
+	public ArrayList<DBApp.Triple> getElement (Object o  , int index) { 
+		return storage.get(index).get(o) ; 
+	}
 	public void addElement(Hashtable<Object, ArrayList<DBApp.Triple>>h) {
 
 		Object value = h.keys().nextElement(); 
@@ -61,15 +64,13 @@ public class Bitmap implements Serializable {
 	public void setAllBitmaps (Vector store) { 
 		this.storage = store ;  
 	}
-//	public Hashtable<String, Object> getLastElement() {
-//		return storage.get(storage.size() - 1);
-//	}
-//
-//	public Hashtable<String, Object> removeLastElement() {
-//		return storage.remove(storage.size() - 1);
-//	}
+	public Object getLastElementKey() {
+		return storage.get(storage.size() - 1).keys().nextElement() ;
+	}
 
-	
+	public Hashtable<Object, ArrayList<DBApp.Triple>> removeLastElement() {
+		return storage.remove(storage.size() - 1) ;
+	}
 	
 	public String getBitmapName() {
 		return BitmapName;
@@ -87,10 +88,31 @@ public class Bitmap implements Serializable {
 		return storage.size();
 	}
 
+	public boolean bitmapContains(Object a ) { 
+		for (int i = 0 ; i < storage.size() ; i ++ ) { 
+			if (a.toString().equals(storage.get(i).toString()))
+				return true ; 
+		}
+		return false ; 
+	}
 	public void updateRecord(String clusteredVal, Hashtable<String, Object> h) {}
 
-	public int removeRecord(Hashtable<String, Object> h) {
-		return 0 ; 
+	public boolean  removeRecord(Object h) {
+		if (storage.contains(h)){
+			
+			
+			for (int i = 0 ; i <storage.size() ; i ++ ) { 
+				if (h.toString().equals(storage.get(i).keys().nextElement().toString())){
+					storage.remove(i) ; 
+					break ;  
+
+				}
+			}
+			return true  ;
+		}
+		else {
+			return false ; 
+		}
 	}
 
 }

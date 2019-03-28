@@ -1,10 +1,11 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Properties;
 
-public class DBAppTest {
+public class DBAppTest  {
 
 	static String currentDirectory = System.getProperty("user.dir");
 
@@ -46,11 +47,12 @@ public class DBAppTest {
 			htblColNameValue.put("name", new String("Zaky Noor"));
 			htblColNameValue.put("gpa", new Double(0.88));
 			a.insertIntoTable(strTableName, htblColNameValue);
-			a.showContent("Student");
+//			a.showContent("Student");
+			a.createBitmapIndex(strTableName, "name");
 			System.out.println("BEFORE and AFTER ");
 			Hashtable<String, Object> j = new Hashtable<String, Object>();
-			j.put("id", new Integer(1));
-			a.showContent("Student");
+			j.put("name", "yasser");
+//			a.showContent("Student");
 			a.updateTable("Student", "4", j);
 			// Hashtable<String, Object> h = new Hashtable<String,Object>() ;
 			// h.put("id", new Integer(5)) ;
@@ -103,7 +105,7 @@ public class DBAppTest {
 			htblColNameValue.put("name", new String("Zaky Noor"));
 			htblColNameValue.put("gpa", new Double(0.88));
 			a.insertIntoTable(strTableName, htblColNameValue);
-			a.showContent("Student");
+//			a.showContent("Student");
 			System.out.println("BEFORE and AFTER ");
 			Hashtable<String, Object> j = new Hashtable<String, Object>();
 			j.put("id", new Integer(1));
@@ -111,13 +113,13 @@ public class DBAppTest {
 			// Hashtable<String, Object> h = new Hashtable<String,Object>() ;
 			// h.put("id", new Integer(5)) ;
 			System.out.println();
-			a.showContent("Student");
+//			a.showContent("Student");
 			System.out.println();
 
 			Hashtable<String, Object> jj = new Hashtable<String, Object>();
 			jj.put("name", "kokokok");
 			a.updateTable("Student","1", jj);
-			a.showContent("Student");
+//			a.showContent("Student");
 		} catch (DBAppException e) {
 			System.out.println(e.getMessage());
 		}

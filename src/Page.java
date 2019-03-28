@@ -10,6 +10,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.swing.text.html.HTMLDocument.HTMLReader.PreAction;
+
 public class Page implements Serializable {
 	String currentDire = System.getProperty("user.dir");
 
@@ -48,14 +51,12 @@ public class Page implements Serializable {
 		}
 
 	}
-	
-	
-	
-	public int  addElement(Hashtable<String, Object> h) {
+
+	public int addElement(Hashtable<String, Object> h) {
 		System.out.println("size " + storage.size());
 
 		boolean flag = true;
-		int i = 0 ; 
+		int i = 0;
 		for (; i < storage.size(); i++) {
 			if (h.get(clusteringValue).toString().compareTo(storage.get(i).get(clusteringValue).toString()) < 0) {
 				storage.insertElementAt(h, i);
@@ -66,7 +67,7 @@ public class Page implements Serializable {
 
 		if (flag)
 			storage.add(h);
-		return i ; 
+		return i;
 
 	}
 
@@ -99,8 +100,8 @@ public class Page implements Serializable {
 		return storage.size();
 	}
 
-	public void updateRecord(String clusteredVal, Hashtable<String, Object> h) {
-
+	public ArrayList<Pair> updateRecord(String clusteredVal, Hashtable<String, Object> h) {
+		ArrayList<Pair> positions = new ArrayList<>();
 		Set keys = h.keySet();
 		Iterator<String> it = keys.iterator();
 		ArrayList<String> updatingValues = new ArrayList<>();
@@ -118,31 +119,30 @@ public class Page implements Serializable {
 
 			if (clusteredVal.equals(r.get(clusteringValue).toString())) {
 
+				positions.add(new Pair (i, r ));
 				for (int j = 0; j < updatingValues.size(); j++) {
 
 					r.put(updatingValues.get(j), h.get(updatingValues.get(j)));
 					r.put("TouchDate", new Date());
 
 				}
-				if (isID) {
-					storage.remove(i);
-
-					try {
-						System.out.println(theTable);
-						theTable.insertIntoTable(tableName, r);
-					} catch (DBAppException e) {
-						e.printStackTrace();
-					}
-				}
-
+				/*
+				 * if (isID) { storage.remove(i);
+				 * 
+				 * try {
+				 * 
+				 * theTable.insertIntoTable(tableName, r);
+				 * 
+				 * } catch (DBAppException e) { e.printStackTrace(); }
+				 */
 			}
 
 		}
-
+		return positions;
 	}
 
-	public int removeRecord(Hashtable<String, Object> h) {
-
+	public ArrayList<Integer> removeRecord(Hashtable<String, Object> h) {
+		ArrayList<Integer> positions = new ArrayList<>();
 		Set keys = h.keySet();
 		Iterator<String> it = keys.iterator();
 		ArrayList<String> key = new ArrayList<>();
@@ -150,7 +150,6 @@ public class Page implements Serializable {
 			String k = it.next();
 			key.add(k);
 		}
-		int numberOfRemovedRecords = 0;
 		this.printVector();
 
 		for (int i = 0; i < storage.size(); i++) {
@@ -169,13 +168,42 @@ public class Page implements Serializable {
 
 			}
 			if (counter == h.size()) {
+				positions.add(i);
 				storage.remove(i);
 				i--;
-				numberOfRemovedRecords++;
 			}
 		}
 
-		return numberOfRemovedRecords;
+		return positions;
+	}
+
+	static class Pair implements Serializable {
+		Hashtable<String, Object> previousVal;
+		int pos;
+		
+		public Pair (int pos ,Hashtable<String , Object > p  ) { 
+			
+			this.pos = pos ; 
+			this.previousVal  = p ; 
+		}
+		
+		public Hashtable<String, Object> getPreviousVal() {
+			return previousVal;
+		}
+
+		public void setPreviousVal(Hashtable<String, Object> previousVal) {
+			this.previousVal = previousVal;
+		}
+
+		public int getPos() {
+			return pos;
+		}
+
+		public void setPos(int pos) {
+			this.pos = pos;
+		}
 	}
 
 }
+
+
