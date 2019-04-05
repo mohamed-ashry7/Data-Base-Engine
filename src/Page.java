@@ -53,7 +53,6 @@ public class Page implements Serializable {
 	}
 
 	public int addElement(Hashtable<String, Object> h) {
-		System.out.println("size " + storage.size());
 
 		boolean flag = true;
 		int i = 0;
@@ -126,6 +125,9 @@ public class Page implements Serializable {
 					r.put("TouchDate", new Date());
 
 				}
+				
+				this.storage.remove(i) ; 
+				this.addElement(r) ; 
 				/*
 				 * if (isID) { storage.remove(i);
 				 * 

@@ -39,15 +39,15 @@ public class Bitmap implements Serializable {
 
 
 	
-	public ArrayList<DBApp.Triple> getElement (Object o  , int index) { 
+	public ArrayList<DBApp.Triple> getElementTriple (Object o  , int index) { 
 		return storage.get(index).get(o) ; 
 	}
 	public void addElement(Hashtable<Object, ArrayList<DBApp.Triple>>h) {
 
-		Object value = h.keys().nextElement(); 
+		Object value = h.keys().nextElement().toString(); 
 		boolean flag = true ; 
 		for (int i = 0 ; i < storage.size() ; i ++ ) { 
-			if (value.toString().compareTo(storage.get(i).toString())<0) { 
+			if (value.toString().compareTo(storage.get(i).toString())>0) { 
 				storage.insertElementAt(h, i);
 				flag = false;
 				break;
@@ -88,9 +88,9 @@ public class Bitmap implements Serializable {
 		return storage.size();
 	}
 
-	public boolean bitmapContains(Object a ) { 
+	public boolean bitmapContainsKey(Object a ) { 
 		for (int i = 0 ; i < storage.size() ; i ++ ) { 
-			if (a.toString().equals(storage.get(i).toString()))
+			if (a.toString().equals(storage.get(i).keys().nextElement().toString()))
 				return true ; 
 		}
 		return false ; 
