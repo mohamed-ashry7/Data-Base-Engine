@@ -40,6 +40,11 @@ public class Bitmap implements Serializable {
 
 	
 	public ArrayList<DBApp.Triple> getElementTriple (Object o  , int index) { 
+		System.out.println("HAHAhohohomhmhmhhm");
+		for (int i = 0 ; i < storage.size() ; i ++ ) { 
+			System.out.println(storage.get(i).keys().nextElement().toString());
+			System.out.println(storage.get(i).get(storage.get(i).keys().nextElement().toString()).toString());
+		}
 		return storage.get(index).get(o) ; 
 	}
 	public void addElement(Hashtable<Object, ArrayList<DBApp.Triple>>h) {
@@ -47,13 +52,18 @@ public class Bitmap implements Serializable {
 		Object value = h.keys().nextElement().toString(); 
 		boolean flag = true ; 
 		for (int i = 0 ; i < storage.size() ; i ++ ) { 
-			if (value.toString().compareTo(storage.get(i).toString())>0) { 
+			if (value.toString().compareTo(storage.get(i).keys().nextElement().toString())<0) { 
 				storage.insertElementAt(h, i);
+
 				flag = false;
 				break;
 				
 			}
 		}
+//		System.out.println("HAHAHHAHAHAHAHHAHAH");
+//		for (int i = 0 ; i < storage.size() ; i ++ ) { 
+//			System.out.println(storage.get(i).keys().nextElement().toString());
+//		}
 		if (flag)
 			storage.add(h);
 	}
@@ -89,30 +99,29 @@ public class Bitmap implements Serializable {
 	}
 
 	public boolean bitmapContainsKey(Object a ) { 
-		for (int i = 0 ; i < storage.size() ; i ++ ) { 
-			if (a.toString().equals(storage.get(i).keys().nextElement().toString()))
+
+		for (int i = 0 ; i < storage.size() ; i ++ ) {
+			if (a.toString().equals(storage.get(i).keys().nextElement().toString())){
 				return true ; 
+			}
 		}
 		return false ; 
 	}
-	public void updateRecord(String clusteredVal, Hashtable<String, Object> h) {}
+//	public void updateRecord(Object preValue, Object newVal) {
+//		
+//	}
 
 	public boolean  removeRecord(Object h) {
-		if (storage.contains(h)){
 			
 			
 			for (int i = 0 ; i <storage.size() ; i ++ ) { 
 				if (h.toString().equals(storage.get(i).keys().nextElement().toString())){
 					storage.remove(i) ; 
-					break ;  
+					return true ;  
 
 				}
 			}
-			return true  ;
-		}
-		else {
-			return false ; 
-		}
+		return false ; 
 	}
 
 }

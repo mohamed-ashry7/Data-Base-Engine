@@ -325,6 +325,10 @@ public class DBApp implements Serializable {
 
 	}
 
+	public void showBitmap(String tableName, String colName) {
+
+	}
+
 	private Page whichPage(Hashtable<String, Object> record, String clustered, String Path) {
 		Page lastPage = null;
 		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(Path + "\\PAGES.ser");
@@ -399,8 +403,8 @@ public class DBApp implements Serializable {
 			while ((line = br.readLine()) != null) {
 				String[] spl = line.split(",");
 				if (spl[4].equals("TRUE")) {
-					System.out.println();
-					System.out.println(spl[1]);
+//					System.out.println();
+//					System.out.println(spl[1]);
 					Set keys = htblColNameValue.keySet();
 					Iterator<String> it = keys.iterator();
 					while (it.hasNext()) {
@@ -456,6 +460,8 @@ public class DBApp implements Serializable {
 
 	}
 
+//	updateTheIndexFromDelete(strTableName, e.getPageName(), indexed, htblColNameValue,
+//			insta.getPos());
 	public void updateTheIndexFromDelete(String strTableName, String pageName, ArrayList<String> names,
 			Hashtable<String, Object> htblColNameValue, int position) {
 		for (String name : names)
@@ -541,7 +547,6 @@ public class DBApp implements Serializable {
 		String clusteringValue = strKey;
 		Hashtable<String, Object> value = mapHash(htblColNameValue);
 		if (indexedCol.size() == 0) {
-
 			ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
 					currentDir + "\\data\\" + strTableName + "\\PAGES.ser");
 			for (int i = 0; i < PAGES.size(); i++) {
@@ -550,14 +555,32 @@ public class DBApp implements Serializable {
 				if (e != null) {
 					ArrayList<String> indexed = getAllIndex(strTableName, htblColNameValue);
 					ArrayList<Page.Pair> PositionsAndPreviousValue = e.updateRecord(clusteringValue, htblColNameValue);
+					if (indexed != null) {
+						Set keys = htblColNameValue.keySet();
+						Iterator<String> it = keys.iterator();
+						while (it.hasNext()) {
+							String k = it.next();
+							if (indexed.contains(k)) {
+								for (int f = 0; f < PositionsAndPreviousValue.size(); f++) {
+								
+									boolean flag = deleteBitmapObject(strTableName,
+											PositionsAndPreviousValue.get(f).getPreviousVal().get(k), k);
+									if (flag) {
+										insertNewBitmapObject(strTableName, htblColNameValue.get(k), k);
+									}
+								}
+							}
+						}
+						for (Page.Pair insta : PositionsAndPreviousValue) {
+							updateTheIndexFromDelete(strTableName, e.getPageName(), indexed, htblColNameValue,
+									insta.getPos());
+							updateTheIndexFromInsert(strTableName, e.getPageName(), indexed, htblColNameValue,
+									insta.getPos());
 
-					for (Page.Pair insta : PositionsAndPreviousValue) {
-						updateTheIndexFromDelete(strTableName, e.getPageName(), indexed, htblColNameValue,
-								insta.getPos());
-						updateTheIndexFromInsert(strTableName, e.getPageName(), indexed, htblColNameValue,
-								insta.getPos());
+						}
 
 					}
+
 					serializingAnObject(e, currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
 
 				}
@@ -576,25 +599,41 @@ public class DBApp implements Serializable {
 						for (int j = 0; j < allElements.size(); j++) {
 							if (allElements.get(j).keys().nextElement().toString().equals(strColumn)) {
 								ArrayList<Triple> triples = allElements.get(j).get(strColumn);
-								for (int k = 0; k < triples.size(); k++) {
-									if (triples.get(k).getValue() == 1) {
+								for (int kk = 0; kk < triples.size(); kk++) {
+									if (triples.get(kk).getValue() == 1) {
 
 										Page e = (Page) deserializingAnObject(currentDir + "\\data\\" + strTableName
-												+ "\\" + "Page" + triples.get(k).getPageNumber() + ".ser");
+												+ "\\" + "Page" + triples.get(kk).getPageNumber() + ".ser");
 										if (e != null) {
 											ArrayList<String> indexed = getAllIndex(strTableName, htblColNameValue);
-											ArrayList<Page.Pair> PositionsAndPreviousValue = e.updateRecord(strKey,
-													htblColNameValue);
+											ArrayList<Page.Pair> PositionsAndPreviousValue = e.updateRecord(clusteringValue, htblColNameValue);
+											if (indexed != null) {
+												Set keys = htblColNameValue.keySet();
+												Iterator<String> it = keys.iterator();
+												while (it.hasNext()) {
+													String k = it.next();
+													if (indexed.contains(k)) {
+														for (int f = 0; f < PositionsAndPreviousValue.size(); f++) {
 
-											for (Page.Pair insta : PositionsAndPreviousValue) {
-												updateTheIndexFromDelete(strTableName, e.getPageName(), indexed,
-														htblColNameValue, insta.getPos());
-												updateTheIndexFromInsert(strTableName, e.getPageName(), indexed,
-														htblColNameValue, insta.getPos());
+															boolean flag = deleteBitmapObject(strTableName,
+																	PositionsAndPreviousValue.get(f).getPreviousVal().get(k), k);
+															if (flag) {
+																insertNewBitmapObject(strTableName, htblColNameValue.get(k), k);
+															}
+														}
+													}
+												}
+												for (Page.Pair insta : PositionsAndPreviousValue) {
+													updateTheIndexFromDelete(strTableName, e.getPageName(), indexed, htblColNameValue,
+															insta.getPos());
+													updateTheIndexFromInsert(strTableName, e.getPageName(), indexed, htblColNameValue,
+															insta.getPos());
+
+												}
 
 											}
-											serializingAnObject(e, currentDir + "\\data\\" + strTableName + "\\"
-													+ e.getPageName() + ".ser");
+
+											serializingAnObject(e, currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
 
 										}
 										break;
@@ -615,6 +654,7 @@ public class DBApp implements Serializable {
 	////////////////////////////////////// DELETE//////////////////////////////////////////////////////////////////
 	public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
 		validateTypesOfValues(htblColNameValue, strTableName);
+
 		ArrayList<String> indexedCol = getAllIndex(strTableName, htblColNameValue);
 		String clusteringColumn = clusteringColumn(strTableName);
 		Hashtable<String, Object> value = mapHash(htblColNameValue);
@@ -648,17 +688,16 @@ public class DBApp implements Serializable {
 			File[] listOfFiles = folder.listFiles();
 			Bitmap b = null;
 			ArrayList<ArrayList<String>> multiVal = new ArrayList<>();
-
 			for (int h = 0; h < indexedCol.size(); h++) {
 				for (int i = 0; i < listOfFiles.length; i++) {
 					if (listOfFiles[i].getName().contains(indexedCol.get(h))) {
+
 						b = (Bitmap) deserializingAnObject(listOfFiles[i].getPath());
 						if (b.bitmapContainsKey(htblColNameValue.get(indexedCol.get(h)))) {
 							Vector<Hashtable<Object, ArrayList<Triple>>> allElements = b.getAllBitmaps();
 							for (int j = 0; j < allElements.size(); j++) {
 								if (allElements.get(j).keys().nextElement().toString()
 										.equals(htblColNameValue.get(indexedCol.get(h)))) {
-
 									multiVal.add(decomporesssIndexedCol(listOfFiles[i].getPath(),
 											allElements.get(j).keys().nextElement().toString(), j));
 									break;
@@ -672,8 +711,14 @@ public class DBApp implements Serializable {
 				}
 
 			}
-			ArrayList<String> allTogether = AND(multiVal);
+			System.out.println("here");
+			for (int ba = 0 ; ba<multiVal.size() ;  ba ++ ){
+				System.out.println(multiVal.get(ba));
 
+			}
+			ArrayList<String> allTogether = AND(multiVal);
+//			System.out.println("hahahahhahahhaha");
+//			System.out.println(allTogether.toString());
 			ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
 					currentDir + "\\data\\" + strTableName + "\\PAGES.ser");
 			for (int i = 0; i < PAGES.size(); i++) {
@@ -817,8 +862,7 @@ public class DBApp implements Serializable {
 				distinct.set(i, in.get(i));
 			}
 		}
-		// System.out.println(distinct.toString());
-		// System.out.println(distinct.size());
+
 		String[] bitmaps = new String[distinct.size()];
 		Arrays.fill(bitmaps, "");
 		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
@@ -877,8 +921,7 @@ public class DBApp implements Serializable {
 	}
 
 	public ArrayList<Triple> compressRLE(String zeroAndOne) {
-		// System.out.println(zeroAndOne + "
-		// ZEEEEEEEEEEEEROOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
+
 		String compressed = "";
 		StringTokenizer st = new StringTokenizer(zeroAndOne, ",");
 		ArrayList<Triple> compressForm = new ArrayList<>();
@@ -888,7 +931,6 @@ public class DBApp implements Serializable {
 				break;
 			String simplifiedForm = st.nextToken();
 			char currentChar = simplifiedForm.charAt(0);
-			System.out.println(currentChar + "  jijijajajjajajajajajajaj");
 			int occurances = 1;
 			for (int i = 1; i <= simplifiedForm.length() - 1; i++) {
 
@@ -897,25 +939,13 @@ public class DBApp implements Serializable {
 					compressForm.add(p);
 					occurances = 1;
 					currentChar = simplifiedForm.charAt(i);
-					// System.out.println(p.getValue() + "
-					// HOOOOOOOOOOOOOOBBBBBBBBBBBBBBBBAAAAAAAAAAAAAA");
-					// System.out.println(currentChar + "
-					// CURRRRRRRRRREEEEEEEEEEEENNTT");
+			
 				} else {
 					occurances++;
 				}
 			}
 			Triple p = new Triple(pageName, occurances, Integer.parseInt(currentChar + ""));
 			compressForm.add(p);
-
-			// System.out.println("HEEEEEEEEEEERRRRRRRRREEEEEEEEEE");
-			// for (int i = 0 ; i < compressForm.size() ; i ++ ) {
-			// System.out.println(compressForm.get(i).getPageName());
-			// System.out.println(compressForm.get(i).getNumberOfValue());
-			// System.out.println(compressForm.get(i).getValue());
-			//
-			//
-			// }
 
 		}
 
@@ -930,22 +960,6 @@ public class DBApp implements Serializable {
 		}
 
 		return decompressedForm;
-	}
-
-	public void deleteBitmapObject(String strTableName, Object val, String Column) {
-		File folder = new File(currentDir + "\\data\\" + strTableName);
-		File[] listOfFiles = folder.listFiles();
-		Bitmap b = null;
-		for (int i = 0; i < listOfFiles.length; i++) {
-			if (listOfFiles[i].getName().contains(Column)) {
-				b = (Bitmap) deserializingAnObject(listOfFiles[i].getPath());
-				if (b.removeRecord(val)) {
-					break;
-				}
-
-			}
-		}
-
 	}
 
 	public Bitmap whichBitmap(String strTableName, Object newBitmapVal, String Column) {
@@ -966,18 +980,18 @@ public class DBApp implements Serializable {
 		return b;
 	}
 
-	public Bitmap lastBitmap(String strTableName) {
+	public Bitmap lastBitmap(String strTableName,String strColName ) {
 		File file = new File(currentDir + "\\data\\" + strTableName);
 		String[] directories = file.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File current, String name) {
-				if (name.charAt(0) == 'B') {
+				if (name.contains(strColName)) {
 					return true;
 				}
 				return false;
 			}
 		});
-		return (Bitmap) deserializingAnObject(directories[directories.length - 1]);
+		return (Bitmap) deserializingAnObject(currentDir + "\\data\\" + strTableName +"\\" + directories[directories.length - 1]);
 	}
 
 	public Hashtable<Object, ArrayList<Triple>> BitmappingValue(String strTableName, Object newVal, String strColName) {
@@ -988,17 +1002,23 @@ public class DBApp implements Serializable {
 			Page e = (Page) deserializingAnObject(
 					currentDir + "\\data\\" + strTableName + "\\Page" + PAGES.get(i) + ".ser");
 			Vector<Hashtable<String, Object>> storage = e.getValues();
+			bitmap+= e.getPageName()+"," ; 
+			System.out.println("yaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarrrrrrrrrrrrrrrrrraaaaaaaaaaa%$#%$%#$%#$%#$%#$%#$%#");
 
 			for (int j = 0; j < storage.size(); j++) {
-				Hashtable<String, Object> record = storage.get(i);
+				Hashtable<String, Object> record = storage.get(j);
 				Object o = record.get(strColName);
-
-				if (newVal.toString().equals(o.toString()))
-					bitmap = bitmap + "1";
+				System.out.println(newVal.toString());
+				System.out.println(o.toString());
+				if (newVal.toString().equals(o.toString())){
+					bitmap = bitmap + "1"; 
+					}
 				else
 					bitmap = bitmap + "0";
 
 			}
+			bitmap+= "," ; 
+
 
 		}
 
@@ -1033,14 +1053,48 @@ public class DBApp implements Serializable {
 	 * 
 	 * 
 	 */
+	// public void updateBitmapObject(String strTableName, Object val, String
+	// Column) {
+	// File folder = new File(currentDir + "\\data\\" + strTableName);
+	// File[] listOfFiles = folder.listFiles();
+	// Bitmap b = null;
+	// for (int i = 0; i < listOfFiles.length; i++) {
+	// if (listOfFiles[i].getName().contains(Column)) {
+	// b = (Bitmap) deserializingAnObject(listOfFiles[i].getPath());
+	// if (b.removeRecord(val)) {
+	// break;
+	// }
+	//
+	// }
+	// }
+	//
+	// }
+	public boolean deleteBitmapObject(String strTableName, Object val, String Column) {
+		File folder = new File(currentDir + "\\data\\" + strTableName);
+		File[] listOfFiles = folder.listFiles();
+		Bitmap b = null;
+		for (int i = 0; i < listOfFiles.length; i++) {
+			if (listOfFiles[i].getName().contains(Column)) {
+				b = (Bitmap) deserializingAnObject(listOfFiles[i].getPath());
+				if (b.removeRecord(val)) {
+					return true;
+				}
+
+			}
+		}
+		return false;
+	}
+
 	public void insertNewBitmapObject(String strTableName, Object newBitmapVal, String strColName) {
 
 		Object value = newBitmapVal;
 		Hashtable<Object, ArrayList<Triple>> theBitmappedNewValue = BitmappingValue(strTableName, newBitmapVal,
 				strColName);
+		System.out.println("hbhbhbhbhbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah");
+		System.out.println(theBitmappedNewValue.get(newBitmapVal).toString());
 		Hashtable<Object, ArrayList<Triple>> lastBitmapVal = null;
 
-		Bitmap lastBitmap = lastBitmap(strTableName);
+		Bitmap lastBitmap = lastBitmap(strTableName ,strColName);
 		while (true) {
 			Bitmap toAddIn = whichBitmap(strTableName, value, strColName);
 
@@ -1119,7 +1173,7 @@ public class DBApp implements Serializable {
 
 				}
 				b.setAllBitmaps(allElements);
-				serializingAnObject(b, currentDir + "\\data\\" + strTableName + "\\" + b.getBitmapName());
+				serializingAnObject(b, currentDir + "\\data\\" + strTableName + "\\" + b.getBitmapName() + ".ser");
 			}
 		}
 
@@ -1164,7 +1218,7 @@ public class DBApp implements Serializable {
 
 				}
 				b.setAllBitmaps(allElements);
-				serializingAnObject(b, currentDir + "\\data\\" + strTableName + "\\" + b.getBitmapName());
+				serializingAnObject(b, currentDir + "\\data\\" + strTableName + "\\" + b.getBitmapName() + ".ser");
 
 			}
 		}
@@ -1224,29 +1278,22 @@ public class DBApp implements Serializable {
 			decompressedValues.add("");
 		}
 		Bitmap b = (Bitmap) deserializingAnObject(Path);
-		// System.out.println(key.toString() + "
-		// aaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-		// System.out.println(index + " kokokokokokokokokokokokoko");
+
 		ArrayList<Triple> comval = b.getElementTriple(key, index);
-		System.out.println(key + " aaaaaaaaaaaaaaaaaaaaaasdsdsdsds");
+		
+
 		for (int i = 0; i < comval.size(); i++) {
-			System.out.println(i + "               " + comval.get(i).getNumberOfValue());
-		}
-		// System.out.println(comval.get(0).getPageName());
-		// System.out.println(comval.get(0).getNumberOfValue());
-		// System.out.println(comval.get(0).getValue());
-		// System.out.println(comval.toString() + " AAAAAAAAAAAAAAAAAAAA");
-		for (int i = 0; i < comval.size(); i++) {
+			System.out.println("init");
 			if (i == 0) {
 				decompressedValues.set(comval.get(i).getPageNumber(), decompressRLE(comval.get(i)));
 			} else {
 				String already = decompressedValues.get(comval.get(i).getPageNumber()) + decompressRLE(comval.get(i));
-				System.out.println(already + " asdddddddddddddddddddddddddddddddd");
-
 				decompressedValues.set(comval.get(i).getPageNumber(), already);
 
 			}
 		}
+		System.out.println("hohohohoho");
+	System.out.println(decompressedValues.toString());
 		return decompressedValues;
 	}
 
@@ -1259,10 +1306,12 @@ public class DBApp implements Serializable {
 	}
 
 	private ArrayList<String> AND(ArrayList<ArrayList<String>> decompressedVal) {
-		ArrayList<String> andResult = new ArrayList<>();
-		andResult = decompressedVal.get(1);
-		for (int i = 2; i < decompressedVal.size(); i++) {
-			if (decompressedVal.get(i) != null)
+
+		ArrayList<String> andResult = null;
+		for (int i = 0; i < decompressedVal.size(); i++) {
+			if (decompressedVal.get(i) != null && andResult == null) {
+				andResult = decompressedVal.get(i);
+			} else if (decompressedVal.get(i) != null)
 				for (int j = 0; j < decompressedVal.get(i).size(); j++) {
 					if (decompressedVal.get(i).get(j) != null && decompressedVal.get(i).get(j).length() != 0) {
 						BigInteger a = new BigInteger(decompressedVal.get(i).get(j), 2);
@@ -1276,11 +1325,11 @@ public class DBApp implements Serializable {
 	}
 
 	private ArrayList<String> OR(ArrayList<ArrayList<String>> decompressedVal) {
-		ArrayList<String> orResult = new ArrayList<>();
-		orResult = decompressedVal.get(1);
-
-		for (int i = 2; i < decompressedVal.size(); i++) {
-			if (decompressedVal.get(i) != null)
+		ArrayList<String> orResult = null;
+		for (int i = 0; i < decompressedVal.size(); i++) {
+			if (decompressedVal.get(i) != null && orResult == null) {
+				orResult = decompressedVal.get(i);
+			} else if (decompressedVal.get(i) != null)
 				for (int j = 0; j < decompressedVal.get(i).size(); j++) {
 					if (decompressedVal.get(i).get(j) != null && decompressedVal.get(i).get(j).length() != 0) {
 
@@ -1295,10 +1344,11 @@ public class DBApp implements Serializable {
 	}
 
 	private ArrayList<String> XOR(ArrayList<ArrayList<String>> decompressedVal) {
-		ArrayList<String> xorResult = new ArrayList<>();
-		xorResult = decompressedVal.get(1);
-		for (int i = 2; i < decompressedVal.size(); i++) {
-			if (decompressedVal.get(i) != null)
+		ArrayList<String> xorResult = null;
+		for (int i = 0; i < decompressedVal.size(); i++) {
+			if (decompressedVal.get(i) != null && xorResult == null) {
+				xorResult = decompressedVal.get(i);
+			} else if (decompressedVal.get(i) != null)
 				for (int j = 0; j < decompressedVal.get(i).size(); j++) {
 					if (decompressedVal.get(i).get(j) != null && decompressedVal.get(i).get(j).length() != 0) {
 						BigInteger a = new BigInteger(decompressedVal.get(i).get(j), 2);
@@ -1376,13 +1426,13 @@ public class DBApp implements Serializable {
 					dis[j] = sto.get(j).keys().nextElement().toString();
 				}
 				int index = Arrays.binarySearch(dis, GOAL);
-				System.out.println(GOAL);
-				System.out.println(Arrays.toString(dis));
+//				System.out.println(GOAL);
+//				System.out.println(Arrays.toString(dis));
 				// System.out.println(index +
 				// "INNNNNNNNNNNNNNNNNNNNDDDDDDDDDDDDEEEEEEEEEEEEXXXXXXXXXXXXXX");
 				if (index >= 0) {
 					result = decomporesssIndexedCol(Path, GOAL, index);
-					System.out.println(result.toString());
+//					System.out.println(result.toString());
 				}
 
 			}
@@ -1423,7 +1473,7 @@ public class DBApp implements Serializable {
 				String Path = currentDir + "\\data\\" + strTableName + "\\" + listOfFiles[i].getName();
 				Bitmap b = (Bitmap) deserializingAnObject(Path);
 				Vector<Hashtable<Object, ArrayList<Triple>>> sto = b.getAllBitmaps();
-				System.out.println(sto.size());
+//				System.out.println(sto.size());
 				// Set keySet = sto.get(1).keySet() ;
 				// Iterator it = keySet.iterator() ;
 				// while (it.hasNext())
@@ -1441,15 +1491,15 @@ public class DBApp implements Serializable {
 
 			}
 		}
-		System.out.println(ALL.get(3).toString());
-		System.out.println(ALL.size() + " aaaaaaaaaaaaaaasdasdasdasdasdas");
+//		System.out.println(ALL.get(3).toString());
+//		System.out.println(ALL.size() + " aaaaaaaaaaaaaaasdasdasdasdasdas");
 		return OR(ALL);
 	}
 
 	private ArrayList<String> NotEqual(String strTableName, String strColName, Object GOAL) {
 
 		ArrayList<String> result = Equal(strTableName, strColName, GOAL);
-		System.out.println(result.toString());
+//		System.out.println(result.toString());
 		for (int i = 0; i < result.size(); i++) {
 			if (result.get(i) != null) {
 				BigInteger a = new BigInteger(result.get(i), 2);
@@ -1619,7 +1669,7 @@ public class DBApp implements Serializable {
 			throw new DBAppException("BAD SYNTAX");
 		}
 		String tableName = arrSQLTerms[0]._strTableName;
-		System.out.println(tableName);
+//		System.out.println(tableName);
 		Hashtable<String, Object> input = new Hashtable<>();
 
 		for (SQLTerm term : arrSQLTerms) {
@@ -1635,15 +1685,15 @@ public class DBApp implements Serializable {
 			operators.add(op);
 		}
 		ArrayList<String> indexedCol = getAllIndex(tableName, input);
-		System.out.println(indexedCol.toString());
-		System.out.println(input);
+//		System.out.println(indexedCol.toString());
+//		System.out.println(input);
 		ArrayList<ArrayList<String>> theSqlTerms = new ArrayList<>();
 		for (int i = 0; i < arrSQLTerms.length; i++) {
 			SQLTerm term = arrSQLTerms[i];
 			if (indexedCol.contains(term._strColumnName)) {
 				switch (term._strOperator) {
 				case ">":
-					System.out.println("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
+//					System.out.println("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
 					theSqlTerms.add(GreaterThan(term._strTableName, term._strColumnName, term._objValue));
 					break;
 				case "<":
@@ -1651,7 +1701,7 @@ public class DBApp implements Serializable {
 
 					break;
 				case ">=":
-					System.out.println("Hallloo4");
+//					System.out.println("Hallloo4");
 					theSqlTerms.add(GreaterOrEqual(term._strTableName, term._strColumnName, term._objValue));
 
 					break;
@@ -1660,8 +1710,8 @@ public class DBApp implements Serializable {
 
 					break;
 				case "=":
-					System.out.println(Equal(term._strTableName, term._strColumnName, term._objValue).toString()
-							+ "aaaaaaaaaadasdasdaaaaaaaaaaaaaaa");
+//					System.out.println(Equal(term._strTableName, term._strColumnName, term._objValue).toString()
+//							+ "aaaaaaaaaadasdasdaaaaaaaaaaaaaaa");
 					theSqlTerms.add(Equal(term._strTableName, term._strColumnName, term._objValue));
 
 					break;
@@ -1746,9 +1796,9 @@ public class DBApp implements Serializable {
 
 		}
 		ArrayList<Hashtable<String, Object>> result = new ArrayList<>();
-		System.out.println(theSqlTerms.size() + "SSSSSSSSSSSSSSSIIIIIIIIIIIZEEEEEEEEEEEEEEE");
+//		System.out.println(theSqlTerms.size() + "SSSSSSSSSSSSSSSIIIIIIIIIIIZEEEEEEEEEEEEEEE");
 		ArrayList<String> theFinalSQL = theSqlTerms.get(0);
-		System.out.println(theFinalSQL.toString() + "        aaaaaaaaaaaaaaaaaaaaaaaaaa");
+//		System.out.println(theFinalSQL.toString() + "        aaaaaaaaaaaaaaaaaaaaaaaaaa");
 		ArrayList<Integer> PAGES = (ArrayList<Integer>) deserializingAnObject(
 				currentDir + "\\data\\" + tableName + "\\PAGES.ser");
 		for (int i = 0; i < PAGES.size(); i++) {

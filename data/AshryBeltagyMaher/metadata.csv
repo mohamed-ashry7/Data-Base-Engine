@@ -1,4 +1,0 @@
-Table Name , Column Name , Column Type , Key , Indexed
-AshryBeltagyMaher,gpa,java.lang.Double,False,False 
-AshryBeltagyMaher,name,java.lang.String,False,False 
-AshryBeltagyMaher,id,java.lang.Integer,True,False 

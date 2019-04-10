@@ -115,10 +115,10 @@ public class Page implements Serializable {
 		for (int i = 0; i < storage.size(); i++) {
 
 			Hashtable<String, Object> r = storage.get(i);
-
 			if (clusteredVal.equals(r.get(clusteringValue).toString())) {
+				Hashtable<String, Object> rr = (Hashtable<String, Object> )r.clone();
 
-				positions.add(new Pair (i, r ));
+				positions.add(new Pair (i, rr ));
 				for (int j = 0; j < updatingValues.size(); j++) {
 
 					r.put(updatingValues.get(j), h.get(updatingValues.get(j)));
@@ -140,6 +140,7 @@ public class Page implements Serializable {
 			}
 
 		}
+		
 		return positions;
 	}
 
