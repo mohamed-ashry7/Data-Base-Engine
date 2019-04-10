@@ -555,6 +555,8 @@ public class DBApp implements Serializable {
 				if (e != null) {
 					ArrayList<String> indexed = getAllIndex(strTableName, htblColNameValue);
 					ArrayList<Page.Pair> PositionsAndPreviousValue = e.updateRecord(clusteringValue, htblColNameValue);
+					serializingAnObject(e, currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
+
 					if (indexed != null) {
 						Set keys = htblColNameValue.keySet();
 						Iterator<String> it = keys.iterator();
@@ -581,7 +583,6 @@ public class DBApp implements Serializable {
 
 					}
 
-					serializingAnObject(e, currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
 
 				}
 			}
@@ -607,6 +608,8 @@ public class DBApp implements Serializable {
 										if (e != null) {
 											ArrayList<String> indexed = getAllIndex(strTableName, htblColNameValue);
 											ArrayList<Page.Pair> PositionsAndPreviousValue = e.updateRecord(clusteringValue, htblColNameValue);
+											serializingAnObject(e, currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
+
 											if (indexed != null) {
 												Set keys = htblColNameValue.keySet();
 												Iterator<String> it = keys.iterator();
@@ -633,7 +636,6 @@ public class DBApp implements Serializable {
 
 											}
 
-											serializingAnObject(e, currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
 
 										}
 										break;
@@ -667,9 +669,7 @@ public class DBApp implements Serializable {
 				if (e != null) {
 					ArrayList<Integer> positions = e.removeRecord(value);
 					ArrayList<String> indexedColumns = getAllIndex(strTableName, htblColNameValue);
-					for (int k : positions) {
-						updateTheIndexFromDelete(strTableName, e.getPageName(), indexedColumns, htblColNameValue, k);
-					}
+					
 					int numberOfDeletions = positions.size();
 					changeNoRows(strTableName, "-", numberOfDeletions);
 					if (e.isEmpty()) {
@@ -679,6 +679,9 @@ public class DBApp implements Serializable {
 					} else {
 						serializingAnObject(e,
 								currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
+					}
+					for (int k : positions) {
+						updateTheIndexFromDelete(strTableName, e.getPageName(), indexedColumns, htblColNameValue, k);
 					}
 				}
 			}
@@ -729,10 +732,7 @@ public class DBApp implements Serializable {
 					if (e != null) {
 						ArrayList<Integer> positions = e.removeRecord(value);
 						ArrayList<String> indexedColumns = getAllIndex(strTableName, htblColNameValue);
-						for (int k : positions) {
-							updateTheIndexFromDelete(strTableName, e.getPageName(), indexedColumns, htblColNameValue,
-									k);
-						}
+						
 						int numberOfDeletions = positions.size();
 						changeNoRows(strTableName, "-", numberOfDeletions);
 						if (e.isEmpty()) {
@@ -742,6 +742,10 @@ public class DBApp implements Serializable {
 						} else {
 							serializingAnObject(e,
 									currentDir + "\\data\\" + strTableName + "\\" + e.getPageName() + ".ser");
+						}
+						for (int k : positions) {
+							updateTheIndexFromDelete(strTableName, e.getPageName(), indexedColumns, htblColNameValue,
+									k);
 						}
 					}
 

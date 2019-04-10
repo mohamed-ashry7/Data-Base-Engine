@@ -58,8 +58,8 @@ public class DBAppTest  {
 			a.updateTable(strTableName, "3", j);
 			a.showContent("Student");
 			System.out.println("hahahah");
-			Hashtable<String, Object> jj = new Hashtable<String, Object>();
-			jj.put("gpa", 1.25);
+//			Hashtable<String, Object> jj = new Hashtable<String, Object>();
+//			jj.put("gpa", 1.25);
 			a.deleteFromTable("Student", j);
 			System.out.println("after operations the table " );
 			a.showContent("Student");
