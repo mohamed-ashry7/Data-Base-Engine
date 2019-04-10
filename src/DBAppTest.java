@@ -51,18 +51,17 @@ public class DBAppTest  {
 			
 			System.out.println("the table " );
 			a.showContent("Student");
-			System.out.println("lalalala");
 			a.createBitmapIndex(strTableName, "name");
 			Hashtable<String, Object> j = new Hashtable<String, Object>();
-			j.put("name", "Bobobo");
+			j.put("name" , "yasser");
 			a.updateTable(strTableName, "3", j);
-			a.showContent("Student");
-			System.out.println("hahahah");
+//			a.showContent("Student");
+//			System.out.println("hahahah");
 //			Hashtable<String, Object> jj = new Hashtable<String, Object>();
 //			jj.put("gpa", 1.25);
-			a.deleteFromTable("Student", j);
-			System.out.println("after operations the table " );
-			a.showContent("Student");
+//			a.deleteFromTable("Student", j);
+//			System.out.println("after operations the table " );
+//			a.showContent("Student");
 //			
 //			Hashtable<String, Object> j = new Hashtable<String, Object>();
 //			j.put("name", "yasser");
@@ -70,12 +69,15 @@ public class DBAppTest  {
 //
 //			Hashtable<String, Object> jj = new Hashtable<String, Object>();
 //	
-//			SQLTerm p = new SQLTerm("Student", "name", "=", "Dalia Noor") ; 
-//			Iterator<Hashtable<String  , Object >> c =  a.selectFromTable(new SQLTerm[]{p}, new String []{}) ;
-//			while (c.hasNext()) { 
-//				System.out.println("adasda");
-//				System.out.println(c.next().toString());
-//			}
+			System.out.println();
+			SQLTerm p = new SQLTerm("Student", "name", "!=", "dalia Noor") ; 
+			SQLTerm pp = new SQLTerm("Student", "gpa", "=", 0.95) ; 
+			SQLTerm ppp = new SQLTerm("Student", "id", ">", 3) ; 
+
+			Iterator<Hashtable<String  , Object >> c =  a.selectFromTable(new SQLTerm[]{p,pp,ppp}, new String []{"XOR" , "AND"}) ;
+			while (c.hasNext()) { 
+				System.out.println(c.next().toString());
+			}
 		} catch (DBAppException e) {
 			System.out.println(e.getMessage());
 		}

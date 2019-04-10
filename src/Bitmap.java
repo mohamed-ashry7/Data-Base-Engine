@@ -40,11 +40,7 @@ public class Bitmap implements Serializable {
 
 	
 	public ArrayList<DBApp.Triple> getElementTriple (Object o  , int index) { 
-		System.out.println("HAHAhohohomhmhmhhm");
-		for (int i = 0 ; i < storage.size() ; i ++ ) { 
-			System.out.println(storage.get(i).keys().nextElement().toString());
-			System.out.println(storage.get(i).get(storage.get(i).keys().nextElement().toString()).toString());
-		}
+		
 		return storage.get(index).get(o) ; 
 	}
 	public void addElement(Hashtable<Object, ArrayList<DBApp.Triple>>h) {
