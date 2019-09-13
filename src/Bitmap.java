@@ -2,6 +2,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Properties;
 import java.util.Set;
@@ -41,7 +42,29 @@ public class Bitmap implements Serializable {
 	
 	public ArrayList<DBApp.Triple> getElementTriple (Object o  , int index) { 
 		
-		return storage.get(index).get(o) ; 
+
+
+		String cls = o.getClass().getName();
+
+		switch (cls) {
+		case "java.lang.Integer":
+			return storage.get(index).get(Integer.parseInt(o.toString())) ; 
+
+
+		case "java.lang.Double":
+			return storage.get(index).get(Double.parseDouble(o.toString())) ; 
+
+
+		case "java.lang.String":
+			return storage.get(index).get(o.toString()) ; 
+			
+		default : 
+			return storage.get(index).get(o.toString()) ; 
+
+
+
+		}
+	
 	}
 	public void addElement(Hashtable<Object, ArrayList<DBApp.Triple>>h) {
 

@@ -1,4 +1,0 @@
-Table Name , Column Name , Column Type , Key , Indexed,
-Student,gpa,java.lang.Double,False,False ,
-Student,name,java.lang.String,False,TRUE,
-Student,id,java.lang.Integer,True,False ,
